@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FootyStatsVS — Premium National Football Team Comparison</title>
+    <!-- Modern Typography: Outfit for headers, Inter for stats/body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Stadium Ambient Mode searchlight beams (Desktop only) -->
+    <div class="ambient-beams-container">
+        <div class="ambient-beam beam-left"></div>
+        <div class="ambient-beam beam-right"></div>
+    </div>
+
+    <!-- Confetti celebration canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="container">
+        <header>
+            <div class="header-controls">
+                <button type="button" class="control-toggle-btn" id="ambient-toggle" title="Toggle Stadium Ambient Mode">
+                    <svg class="ambient-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/><circle cx="12" cy="12" r="4"/></svg>
+                </button>
+                <button type="button" class="control-toggle-btn" id="theme-toggle" title="Toggle Light/Dark Theme">
+                    <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg class="moon-icon hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <button type="button" class="control-toggle-btn" id="sound-toggle" title="Toggle Synthesized Audio">
+                    <svg class="sound-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    <svg class="sound-off-icon hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                </button>
+            </div>
+            <div class="logo-area">
+                <svg class="logo-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 2C12 2 15 7 15 12C15 17 12 22 12 22C12 22 9 17 9 12C9 7 12 2 12 2Z"/>
+                    <path d="M2 12H22"/>
+                    <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+                </svg>
+                <h1>FootyStats<span>VS</span></h1>
+            </div>
+            <p class="subtitle">Side-by-side national football team metrics & performance dashboard</p>
+        </header>
+
+        <!-- Hidden inputs inside form to preserve compatibility with existing JS form validation if needed -->
+        <form id="team-form">
+            <input type="hidden" id="team1" value="" required>
+            <input type="hidden" id="team2" value="" required>
+            
+            <div class="selector-row">
+                <!-- Team 1 Trigger Button -->
+                <button type="button" class="team-picker-trigger" id="team1-trigger" data-slot="1">
+                    <span class="trigger-flag" id="team1-trigger-flag"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-light); vertical-align: middle; opacity: 0.85;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
+                    <span class="trigger-name" id="team1-trigger-name">Choose First Team</span>
+                    <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+
+                <div class="vs-divider">
+                    <span class="vs-divider-line"></span>
+                    <span class="vs-divider-text">VS</span>
+                    <span class="vs-divider-line"></span>
+                </div>
+
+                <!-- Team 2 Trigger Button -->
+                <button type="button" class="team-picker-trigger" id="team2-trigger" data-slot="2">
+                    <span class="trigger-flag" id="team2-trigger-flag"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-light); vertical-align: middle; opacity: 0.85;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
+                    <span class="trigger-name" id="team2-trigger-name">Choose Second Team</span>
+                    <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+            </div>
+
+            <!-- Compare Button with custom SVG graphic -->
+            <button type="submit" class="compare-btn" id="compare-btn-element">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                    <polyline points="14 6 20 12 14 18"></polyline>
+                    <line x1="20" y1="6" x2="4" y2="6"></line>
+                    <polyline points="10 12 4 6 10 0"></polyline>
+                </svg>
+                <span>Run Detailed Comparison</span>
+            </button>
+        </form>
+
+        <div id="comparison-result" class="hidden">
+            <!-- Sliding Navigation Tabs -->
+            <div class="tabs-nav-wrapper">
+                <div class="tabs-nav">
+                    <button type="button" class="tab-btn active" data-tab="overview">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        <span>Metrics Overview</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-tab="tactics">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8M12 8v8"></path></svg>
+                        <span>Tactics Pitch</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-tab="trophies">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"></path></svg>
+                        <span>Trophies</span>
+                    </button>
+
+                    <button type="button" class="tab-btn" data-tab="simulator">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <span>Simulator</span>
+                    </button>
+                    <div class="tab-slider"></div>
+                </div>
+            </div>
+
+            <!-- Tab Panels -->
+            <div class="tab-content">
+                <!-- Overview Tab Panel -->
+                <div class="tab-panel active" id="panel-overview">
+                    <div class="comparison-wrapper">
+                        <!-- Team 1 Card -->
+                        <div class="team-card" id="team1-card">
+                            <div class="team-header">
+                                <div class="team-header-main">
+                                    <span class="flag-icon" id="team1-flag">🇦🇷</span>
+                                    <h3 id="team1-name">Argentina</h3>
+                                </div>
+                                <span class="confederation-badge" id="team1-confed">CONMEBOL</span>
+                            </div>
+                            <div class="stats" id="team1-stats">
+                                <!-- Stats rendered via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Central VS Badge -->
+                        <div class="vs-badge-container">
+                            <div class="vs-badge-circle">VS</div>
+                        </div>
+
+                        <!-- Team 2 Card -->
+                        <div class="team-card" id="team2-card">
+                            <div class="team-header">
+                                <div class="team-header-main">
+                                    <span class="flag-icon" id="team2-flag">🇫🇷</span>
+                                    <h3 id="team2-name">France</h3>
+                                </div>
+                                <span class="confederation-badge" id="team2-confed">UEFA</span>
+                            </div>
+                            <div class="stats" id="team2-stats">
+                                <!-- Stats rendered via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Comparative Meter / Analytics -->
+                    <div class="visual-comparison-container" style="width: 100%;">
+                        <h3>Visual Metric Distribution</h3>
+                        <div id="visual-bars" class="visual-bars-grid">
+                            <!-- Progress bar comparison charts rendered via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tactics Pitch Tab Panel -->
+                <div class="tab-panel" id="panel-tactics">
+                    <div class="tactics-control-bar">
+                        <div class="team-selector-flags" id="tactics-team-flags">
+                            <!-- Clickable team flags switches populated by JS -->
+                        </div>
+                        <div class="active-tactics-meta">
+                            <h3 class="active-tactics-title" id="tactics-active-team-title">Lineup Setup</h3>
+                            <p class="active-tactics-sub" id="tactics-active-team-sub">Select a team to inspect tactics</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tactics-tab-layout">
+                        <div class="pitch-container">
+                            <div class="soccer-pitch" id="tactics-pitch-canvas">
+                                <!-- Goal nets -->
+                                <div class="pitch-goal-net left-net"></div>
+                                <div class="pitch-goal-net right-net"></div>
+                                
+                                <!-- Penalty Areas -->
+                                <div class="pitch-penalty-area left-area"></div>
+                                <div class="pitch-penalty-area right-area"></div>
+                                
+                                <!-- Goal Areas -->
+                                <div class="pitch-goal-area left-goal-area"></div>
+                                <div class="pitch-goal-area right-goal-area"></div>
+                                
+                                <!-- Penalty Spots -->
+                                <div class="pitch-penalty-spot left-spot"></div>
+                                <div class="pitch-penalty-spot right-spot"></div>
+                                
+                                <!-- Center line and circle -->
+                                <div class="pitch-center-line"></div>
+                                <div class="pitch-center-circle"></div>
+                                
+                                <!-- Dynamic player nodes container -->
+                                <div id="pitch-player-nodes" class="pitch-nodes-container">
+                                    <!-- GK, DEF, MID, FWD, ST dynamic clickable nodes -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Interactive Detail Panel for selected player card -->
+                        <div class="tactics-detail-card-panel">
+                            <h4 class="details-instructions-text">Hover or click any player on the pitch to inspect card details</h4>
+                            <div class="tactics-player-card-wrapper" id="tactics-player-card-target">
+                                <!-- Dynamic interactive FUT card will render here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trophy Cabinet Tab Panel -->
+                <div class="tab-panel" id="panel-trophies">
+                    <div class="trophy-cabinets-wrapper">
+                        <!-- Team 1 Cabinet -->
+                        <div class="cabinet-showcase" id="cabinet-team1">
+                            <h3 class="cabinet-title">
+                                <span id="cabinet-t1-flag"></span> <span id="cabinet-t1-name">Argentina</span>'s Honors
+                            </h3>
+                            <div class="cabinet-shelves" id="cabinet-t1-shelves">
+                                <!-- Rendered dynamically by JS -->
+                            </div>
+                        </div>
+                        <!-- Team 2 Cabinet -->
+                        <div class="cabinet-showcase" id="cabinet-team2">
+                            <h3 class="cabinet-title">
+                                <span id="cabinet-t2-flag"></span> <span id="cabinet-t2-name">France</span>'s Honors
+                            </h3>
+                            <div class="cabinet-shelves" id="cabinet-t2-shelves">
+                                <!-- Rendered dynamically by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- Match Simulator Tab Panel -->
+                <div class="tab-panel" id="panel-simulator">
+                    <div class="simulator-wrapper">
+                        <!-- Tactical settings selectors -->
+                        <div class="sim-tactics-bar">
+                            <div class="tactic-select-container">
+                                <label for="sim-tactic-team1" id="label-tactic-team1">Argentina Tactic</label>
+                                <select id="sim-tactic-team1" class="tactic-dropdown">
+                                    <option value="balanced">Balanced (Normal)</option>
+                                    <option value="attacking" selected>Attacking (Gegenpressing)</option>
+                                    <option value="defensive">Defensive (Park the Bus)</option>
+                                </select>
+                            </div>
+                            <div class="tactic-select-container team-right-select">
+                                <label for="sim-tactic-team2" id="label-tactic-team2">France Tactic</label>
+                                <select id="sim-tactic-team2" class="tactic-dropdown">
+                                    <option value="balanced">Balanced (Normal)</option>
+                                    <option value="attacking">Attacking (Gegenpressing)</option>
+                                    <option value="defensive" selected>Defensive (Park the Bus)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Scoreboard -->
+                        <div class="sim-scoreboard">
+                            <div class="scoreboard-team">
+                                <span class="scoreboard-flag" id="sim-team1-flag">🇦🇷</span>
+                                <span class="scoreboard-name" id="sim-team1-name">Argentina</span>
+                            </div>
+                            <div class="scoreboard-score">
+                                <span id="sim-score-team1">0</span>
+                                <span class="score-dash">-</span>
+                                <span id="sim-score-team2">0</span>
+                            </div>
+                            <div class="scoreboard-team team-right">
+                                <span class="scoreboard-name" id="sim-team2-name">France</span>
+                                <span class="scoreboard-flag" id="sim-team2-flag">🇫🇷</span>
+                            </div>
+                        </div>
+
+                        <!-- Visual Soccer Pitch possession / ball tracker -->
+                        <div class="sim-pitch-tracker-container">
+                            <div class="sim-tracker-pitch">
+                                <div class="sim-pitch-goal left-goal"></div>
+                                <div class="sim-pitch-zone" id="sim-zone-t1-box">T1 Penalty Area</div>
+                                <div class="sim-pitch-zone" id="sim-zone-t1-third">T1 Def. Third</div>
+                                <div class="sim-pitch-zone active-zone" id="sim-zone-midfield">Midfield Battle</div>
+                                <div class="sim-pitch-zone" id="sim-zone-t2-third">T2 Def. Third</div>
+                                <div class="sim-pitch-zone" id="sim-zone-t2-box">T2 Penalty Area</div>
+                                <div class="sim-pitch-goal right-goal"></div>
+                                <div class="sim-pitch-ball" id="sim-ball-node">⚽</div>
+                            </div>
+                            <div class="sim-ball-possession-bar">
+                                <div class="possession-segment t1-possession" id="possession-t1-pct" style="width: 50%;">50%</div>
+                                <div class="possession-segment t2-possession" id="possession-t2-pct" style="width: 50%;">50%</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Control Box -->
+                        <div class="sim-controls">
+                            <button type="button" class="sim-btn" id="run-sim-btn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                <span>Kick Off Simulation</span>
+                            </button>
+                            <span class="sim-status" id="sim-status-text">Ready for simulation</span>
+                        </div>
+
+                        <!-- Mobile Shake-to-Sim Hint (Mobile only) -->
+                        <div class="mobile-shake-hint" id="shake-hint">
+                            <span class="shake-icon">📱</span>
+                            <span>Shake device to kickoff!</span>
+                        </div>
+
+                        <!-- Pocket Fan Soundboard (Mobile only) -->
+                        <div class="mobile-soundboard-container" id="mobile-soundboard">
+                            <h4 class="soundboard-title">Pocket Fan Soundboard</h4>
+                            <div class="soundboard-grid">
+                                <button type="button" class="soundboard-btn" id="sb-btn-chant" title="Trigger Chant Drums">
+                                    <span class="sb-btn-icon">🥁</span>
+                                    <span class="sb-btn-label">Chant</span>
+                                </button>
+                                <button type="button" class="soundboard-btn" id="sb-btn-boo" title="Boo Referee">
+                                    <span class="sb-btn-icon">🟨</span>
+                                    <span class="sb-btn-label">Boo Ref</span>
+                                </button>
+                                <button type="button" class="soundboard-btn" id="sb-btn-horn" title="Blow Match Air Horn">
+                                    <span class="sb-btn-icon">📢</span>
+                                    <span class="sb-btn-label">Air Horn</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Simulation Timeline Events -->
+                        <div class="sim-timeline" id="sim-timeline-log">
+                            <div class="timeline-placeholder">Click 'Kick Off Simulation' to start the match!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Team Picker Selection Modal Overlay -->
+    <div class="modal-overlay" id="team-selector-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Select National Team</h3>
+                <button type="button" class="modal-close-btn" id="modal-close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-search-wrapper">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="modal-search" placeholder="Search countries (e.g. Brazil, Japan)...">
+            </div>
+
+            <!-- Confederation Filter Tabs -->
+            <div class="modal-filter-tabs" id="modal-filters">
+                <button type="button" class="filter-tab active" data-filter="All">All Regions</button>
+                <button type="button" class="filter-tab" data-filter="UEFA">UEFA</button>
+                <button type="button" class="filter-tab" data-filter="CONMEBOL">CONMEBOL</button>
+                <button type="button" class="filter-tab" data-filter="CAF">CAF</button>
+                <button type="button" class="filter-tab" data-filter="AFC">AFC</button>
+                <button type="button" class="filter-tab" data-filter="CONCACAF">CONCACAF</button>
+            </div>
+
+            <!-- Scrollable country list grid -->
+            <div class="modal-team-grid" id="modal-team-grid">
+                <!-- Populated via Javascript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         Trophy Lightbox Modal
+         ===================================================== -->
+    <div id="trophy-lightbox" class="trophy-lightbox-overlay" role="dialog" aria-modal="true" aria-labelledby="trophy-lb-title">
+        <div class="trophy-lightbox-card" id="trophy-lightbox-card">
+
+            <!-- Particle shimmer canvas (behind everything) -->
+            <canvas id="trophy-lb-particles" class="trophy-lb-particles-canvas"></canvas>
+
+            <!-- Close button -->
+            <button class="trophy-lb-close" id="trophy-lb-close" aria-label="Close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+
+            <!-- Hero header: full-bleed gradient + huge flag centered -->
+            <div class="trophy-lb-hero" id="trophy-lb-hero">
+                <div class="trophy-lb-hero-glow" id="trophy-lb-hero-glow"></div>
+                <span class="trophy-lb-flag-hero" id="trophy-lb-flag"></span>
+                <!-- Competition name badge -->
+                <div class="trophy-lb-competition-badge" id="trophy-lb-title"></div>
+            </div>
+
+            <!-- Trophy + count block -->
+            <div class="trophy-lb-body">
+                <div class="trophy-lb-showcase">
+                    <div class="trophy-lb-glow-ring" id="trophy-lb-glow-ring"></div>
+                    <div class="trophy-lb-trophy-wrap" id="trophy-lb-svg-wrap"></div>
+                </div>
+
+                <div class="trophy-lb-count-block">
+                    <span class="trophy-lb-count-num" id="trophy-lb-count-num">0</span>
+                    <span class="trophy-lb-count-label" id="trophy-lb-count-label">Titles</span>
+                </div>
+
+                <!-- Decorative divider -->
+                <div class="trophy-lb-divider" id="trophy-lb-divider"></div>
+
+                <!-- Years timeline -->
+                <div class="trophy-lb-timeline-section" id="trophy-lb-timeline-section">
+                    <p class="trophy-lb-years-heading">Championship Years</p>
+                    <div class="trophy-lb-years-grid" id="trophy-lb-years-grid"></div>
+                </div>
+
+                <!-- Empty state -->
+                <div class="trophy-lb-empty" id="trophy-lb-empty">
+                    <span class="trophy-lb-empty-icon">✦</span>
+                    <p>No titles yet — the glory awaits.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
