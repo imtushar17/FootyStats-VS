@@ -1045,8 +1045,9 @@ const initTheme = () => {
     const savedTheme = localStorage.getItem('theme');
     const sunIcon = document.querySelector('.sun-icon');
     const moonIcon = document.querySelector('.moon-icon');
+    const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (isDark) {
         document.body.classList.add('dark-theme');
         sunIcon.classList.add('hidden');
         moonIcon.classList.remove('hidden');
@@ -1055,6 +1056,7 @@ const initTheme = () => {
         sunIcon.classList.remove('hidden');
         moonIcon.classList.add('hidden');
     }
+    toggleThemeLayouts(isDark);
 };
 
 document.getElementById('theme-toggle').addEventListener('click', () => {
@@ -1073,6 +1075,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
         sunIcon.classList.remove('hidden');
         moonIcon.classList.add('hidden');
     }
+    toggleThemeLayouts(isDark);
 });
 
 // Helper to generate Flag image HTML
@@ -1482,7 +1485,8 @@ const switchTacticsTeam = (t1Key, t2Key, selectedKey) => {
     }
 
     const activeTeam = teamData[selectedKey];
-    document.getElementById("tactics-active-team-title").textContent = `${selectedKey} Lineup`;
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    document.getElementById("tactics-active-team-title").textContent = isDarkTheme ? "Lineup Setup" : `${selectedKey} Lineup`;
 
     const formation = getRealWorldFormation(selectedKey);
     document.getElementById("tactics-active-team-sub").textContent = `Formation: ${formation} | Coach: ${activeTeam.coach}`;
@@ -2892,3 +2896,907 @@ runSimBtn.addEventListener('click', () => {
         runMatchSimulation(team1Key, team2Key);
     }
 });
+
+// ==========================================================================
+// FIFA World Cup 2026 Live Match Center Engine
+// ==========================================================================
+
+let worldCupGames = [];
+let selectedLiveMatchId = null;
+let liveMatchInterval = null;
+let apiPollInterval = null;
+let liveStates = {}; // Stores live commentary and stats for each game to preserve state
+
+// Hardcoded flags code dictionary for teams not in local teamData
+const ADDITIONAL_FLAGS = {
+    "Norway": "no",
+    "Iraq": "iq",
+    "Cape Verde": "cv",
+    "Saudi Arabia": "sa",
+    "Egypt": "eg",
+    "Iran": "ir",
+    "New Zealand": "nz",
+    "Turkey": "tr",
+    "Scotland": "gb-sct",
+    "Canada": "ca",
+    "Qatar": "qa",
+    "Ivory Coast": "ci",
+    "Sweden": "se",
+    "Haiti": "ht",
+    "Algeria": "dz",
+    "Ghana": "gh",
+    "Jordan": "jo",
+    "Austria": "at",
+    "Uzbekistan": "uz",
+    "Panama": "pa",
+    "Czech Republic": "cz",
+    "South Africa": "za",
+    "Bosnia and Herzegovina": "ba",
+    "Democratic Republic of the Congo": "cd",
+    "Australia": "au"
+};
+
+const getWcTeamFlagHTML = (teamName, className = "") => {
+    // Check if in teamData first
+    const localTeam = teamData[teamName];
+    if (localTeam && localTeam.code) {
+        return `<img src="https://flagcdn.com/${localTeam.code}.svg" class="flag-icon-img ${className}" alt="${teamName} Flag" />`;
+    }
+    // Check additional flags
+    const code = ADDITIONAL_FLAGS[teamName];
+    if (code) {
+        return `<img src="https://flagcdn.com/${code}.svg" class="flag-icon-img ${className}" alt="${teamName} Flag" />`;
+    }
+    return `<span class="flag-placeholder">🏳️</span>`;
+};
+
+const FALLBACK_WORLD_CUP_GAMES = [
+    {
+        id: "61",
+        home_team_name_en: "Senegal",
+        away_team_name_en: "Iraq",
+        home_score: "0",
+        away_score: "0",
+        home_scorers: "null",
+        away_scorers: "null",
+        group: "I",
+        matchday: "3",
+        local_date: "06/26/2026 15:00",
+        stadium_id: "12",
+        finished: "FALSE",
+        time_elapsed: "45",
+        type: "group"
+    },
+    {
+        id: "62",
+        home_team_name_en: "Norway",
+        away_team_name_en: "France",
+        home_score: "1",
+        away_score: "2",
+        home_scorers: "{\"Erling Haaland 22'\"}",
+        away_scorers: "{\"Kylian Mbappé 12'\",\"Ousmane Dembélé 55'\"}",
+        group: "I",
+        matchday: "3",
+        local_date: "06/26/2026 15:00",
+        stadium_id: "9",
+        finished: "FALSE",
+        time_elapsed: "78",
+        type: "group"
+    },
+    {
+        id: "66",
+        home_team_name_en: "Uruguay",
+        away_team_name_en: "Spain",
+        home_score: "0",
+        away_score: "0",
+        home_scorers: "null",
+        away_scorers: "null",
+        group: "H",
+        matchday: "3",
+        local_date: "06/26/2026 18:00",
+        stadium_id: "2",
+        finished: "FALSE",
+        time_elapsed: "notstarted",
+        type: "group"
+    },
+    {
+        id: "65",
+        home_team_name_en: "Cape Verde",
+        away_team_name_en: "Saudi Arabia",
+        home_score: "0",
+        away_score: "0",
+        home_scorers: "null",
+        away_scorers: "null",
+        group: "H",
+        matchday: "3",
+        local_date: "06/26/2026 19:00",
+        stadium_id: "5",
+        finished: "FALSE",
+        time_elapsed: "notstarted",
+        type: "group"
+    },
+    {
+        id: "63",
+        home_team_name_en: "Egypt",
+        away_team_name_en: "Iran",
+        home_score: "0",
+        away_score: "0",
+        home_scorers: "null",
+        away_scorers: "null",
+        group: "G",
+        matchday: "3",
+        local_date: "06/26/2026 20:00",
+        stadium_id: "14",
+        finished: "FALSE",
+        time_elapsed: "notstarted",
+        type: "group"
+    },
+    {
+        id: "64",
+        home_team_name_en: "New Zealand",
+        away_team_name_en: "Belgium",
+        home_score: "0",
+        away_score: "0",
+        home_scorers: "null",
+        away_scorers: "null",
+        group: "G",
+        matchday: "3",
+        local_date: "06/26/2026 20:00",
+        stadium_id: "13",
+        finished: "FALSE",
+        time_elapsed: "notstarted",
+        type: "group"
+    }
+];
+
+// Fetch World Cup games with CORS proxy fallback
+const fetchWorldCupGames = async () => {
+    const API_URL = "https://worldcup26.ir/get/games";
+    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(API_URL)}`;
+
+    try {
+        console.log("Fetching World Cup matches from API...");
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data && Array.isArray(data.games)) {
+            worldCupGames = data.games;
+            console.log(`✅ Fetched ${worldCupGames.length} games from API.`);
+            return;
+        }
+        throw new Error("Invalid API response format");
+    } catch (err) {
+        console.warn("Direct API fetch failed, trying proxy...", err.message);
+        try {
+            const res = await fetch(PROXY_URL);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const wrapper = await res.json();
+            const data = JSON.parse(wrapper.contents);
+            if (data && Array.isArray(data.games)) {
+                worldCupGames = data.games;
+                console.log(`✅ Fetched ${worldCupGames.length} games via proxy.`);
+                return;
+            }
+        } catch (proxyErr) {
+            console.error("CORS proxy fetch failed. Using offline fallback matches.", proxyErr.message);
+            worldCupGames = FALLBACK_WORLD_CUP_GAMES;
+        }
+    }
+};
+
+const toggleThemeLayouts = (isDark) => {
+    const ticket = document.getElementById('live-gateway-ticket');
+    const unlockBtn = document.getElementById('unlock-live-btn');
+    const openArchiveBtn = document.getElementById('open-archive-btn');
+
+    if (isDark) {
+        if (ticket) ticket.classList.remove('hidden');
+        if (unlockBtn) unlockBtn.classList.add('hidden');
+        if (openArchiveBtn) openArchiveBtn.classList.remove('hidden');
+    } else {
+        if (ticket) ticket.classList.add('hidden');
+        if (unlockBtn) unlockBtn.classList.remove('hidden');
+        if (openArchiveBtn) openArchiveBtn.classList.add('hidden');
+        document.body.classList.remove('world-cup-active');
+        deactivateLiveArena();
+    }
+};
+
+const activateLiveArena = async () => {
+    deactivateLiveArena(); // Reset first to avoid multiple intervals
+
+    await fetchWorldCupGames();
+    renderLiveMatches();
+    updateLiveStandings();
+
+    // Auto-select the first live match if none is selected
+    const todayMatches = getTodayMatches();
+    if (todayMatches.length > 0 && !selectedLiveMatchId) {
+        const liveGame = todayMatches.find(g => g.finished === "FALSE" && g.time_elapsed !== "notstarted") || todayMatches[0];
+        selectLiveMatch(liveGame);
+    }
+
+    // Start 30-second API polling sync loop
+    apiPollInterval = setInterval(async () => {
+        const oldSelectedId = selectedLiveMatchId;
+        await fetchWorldCupGames();
+        renderLiveMatches();
+        updateLiveStandings();
+        
+        // Keep selected game active
+        if (oldSelectedId) {
+            const updatedGame = worldCupGames.find(g => g.id === oldSelectedId);
+            if (updatedGame && selectedLiveMatchId === oldSelectedId) {
+                // Sync scores/minutes from API to current selected details
+                const state = liveStates[oldSelectedId];
+                if (state) {
+                    state.scoreHome = parseInt(updatedGame.home_score) || 0;
+                    state.scoreAway = parseInt(updatedGame.away_score) || 0;
+                    state.finished = updatedGame.finished === "TRUE";
+                    if (updatedGame.time_elapsed !== "finished" && updatedGame.time_elapsed !== "notstarted") {
+                        const parsedMin = parseInt(updatedGame.time_elapsed);
+                        if (!isNaN(parsedMin)) state.minute = parsedMin;
+                    }
+                }
+                updateConsoleDetails(updatedGame);
+            }
+        }
+    }, 30000);
+
+    // Start 3-second live simulation tick loop for commentary & minor stats updates
+    liveMatchInterval = setInterval(() => {
+        tickLiveMatchesSimulation();
+    }, 3000);
+};
+
+const deactivateLiveArena = () => {
+    if (apiPollInterval) {
+        clearInterval(apiPollInterval);
+        apiPollInterval = null;
+    }
+    if (liveMatchInterval) {
+        clearInterval(liveMatchInterval);
+        liveMatchInterval = null;
+    }
+};
+
+// Filter matches for June 26, 2026 (our primary target matches)
+const getTodayMatches = () => {
+    return worldCupGames.filter(game => {
+        return game.local_date && game.local_date.startsWith("06/26/2026");
+    });
+};
+
+const renderLiveMatches = () => {
+    const priorityList = document.getElementById("priority-matches-list");
+    const generalList = document.getElementById("general-matches-list");
+
+    if (!priorityList || !generalList) return;
+
+    priorityList.innerHTML = "";
+    generalList.innerHTML = "";
+
+    const selectedT1 = document.getElementById("team1").value;
+    const selectedT2 = document.getElementById("team2").value;
+
+    const todayMatches = getTodayMatches();
+
+    let priorityCount = 0;
+    let generalCount = 0;
+
+    todayMatches.forEach(game => {
+        const hName = game.home_team_name_en;
+        const aName = game.away_team_name_en;
+
+        const isPriority = (selectedT1 && (hName === selectedT1 || aName === selectedT1)) ||
+                           (selectedT2 && (hName === selectedT2 || aName === selectedT2));
+
+        const card = document.createElement("div");
+        card.className = "live-match-card";
+        if (selectedLiveMatchId === game.id) {
+            card.classList.add("active-selected");
+        }
+
+        // Setup Match State initial variables if not exists
+        if (!liveStates[game.id]) {
+            const isLive = game.finished === "FALSE" && game.time_elapsed !== "notstarted";
+            liveStates[game.id] = {
+                minute: isLive ? (parseInt(game.time_elapsed) || 45) : 0,
+                scoreHome: parseInt(game.home_score) || 0,
+                scoreAway: parseInt(game.away_score) || 0,
+                finished: game.finished === "TRUE",
+                stats: {
+                    possession: 50,
+                    shotsHome: 0,
+                    shotsAway: 0,
+                    shotsOnTargetHome: 0,
+                    shotsOnTargetAway: 0,
+                    foulsHome: 0,
+                    foulsAway: 0,
+                    savesHome: 0,
+                    savesAway: 0,
+                    cornersHome: 0,
+                    cornersAway: 0
+                },
+                timeline: []
+            };
+        }
+
+        const state = liveStates[game.id];
+
+        let statusText = "Upcoming";
+        let statusClass = "status-upcoming";
+        if (state.finished) {
+            statusText = "Finished";
+            statusClass = "status-finished";
+        } else if (game.finished === "FALSE" && game.time_elapsed !== "notstarted") {
+            statusText = `Live - ${state.minute}'`;
+            statusClass = "status-live";
+        }
+
+        // Parsed local date time for display
+        const matchTime = game.local_date ? game.local_date.split(" ")[1] : "00:00";
+
+        card.innerHTML = `
+            <div class="m-card-teams">
+                <div class="m-card-team-row">
+                    ${getWcTeamFlagHTML(hName, "m-card-flag")}
+                    <span class="m-card-team-name">${hName}</span>
+                </div>
+                <div class="m-card-team-row">
+                    ${getWcTeamFlagHTML(aName, "m-card-flag")}
+                    <span class="m-card-team-name">${aName}</span>
+                </div>
+            </div>
+            <div class="m-card-score-box">
+                <span class="m-card-score">${state.scoreHome} - ${state.scoreAway}</span>
+                <span class="m-card-meta">${game.group} • ${matchTime}</span>
+            </div>
+            <span class="m-card-status-pill ${statusClass}">
+                ${statusText}
+            </span>
+        `;
+
+        card.addEventListener("click", () => {
+            document.querySelectorAll(".live-match-card").forEach(c => c.classList.remove("active-selected"));
+            card.classList.add("active-selected");
+            selectLiveMatch(game);
+        });
+
+        if (isPriority) {
+            priorityList.appendChild(card);
+            priorityCount++;
+        } else {
+            generalList.appendChild(card);
+            generalCount++;
+        }
+    });
+
+    if (priorityCount === 0) {
+        priorityList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px;">No fixtures involving your selected teams today.</div>`;
+    }
+    if (generalCount === 0) {
+        generalList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px;">No other matchday fixtures today.</div>`;
+    }
+};
+
+const selectLiveMatch = (game) => {
+    selectedLiveMatchId = game.id;
+    document.getElementById("console-empty-state").classList.add("hidden");
+    document.getElementById("console-active-state").classList.remove("hidden");
+    updateConsoleDetails(game);
+    updateLiveStandings(); // Make sure standings refresh next to it
+};
+
+const updateConsoleDetails = (game) => {
+    if (selectedLiveMatchId !== game.id) return;
+    const state = liveStates[game.id];
+    if (!state) return;
+
+    document.getElementById("console-stadium-name").textContent = getStadiumName(game.stadium_id);
+    document.getElementById("console-group-name").textContent = `Group ${game.group}`;
+
+    document.getElementById("console-home-flag").innerHTML = getWcTeamFlagHTML(game.home_team_name_en, "console-flag");
+    document.getElementById("console-home-name").textContent = game.home_team_name_en;
+    document.getElementById("console-away-flag").innerHTML = getWcTeamFlagHTML(game.away_team_name_en, "console-flag");
+    document.getElementById("console-away-name").textContent = game.away_team_name_en;
+
+    document.getElementById("console-home-score").textContent = state.scoreHome;
+    document.getElementById("console-away-score").textContent = state.scoreAway;
+
+    const timeEl = document.getElementById("console-time");
+    timeEl.className = "console-time-elapsed";
+    if (state.finished) {
+        timeEl.textContent = "Finished";
+        timeEl.classList.add("status-finished");
+    } else if (game.finished === "FALSE" && game.time_elapsed !== "notstarted") {
+        timeEl.textContent = `Live - ${state.minute}'`;
+        timeEl.classList.add("status-live");
+    } else {
+        timeEl.textContent = "Upcoming";
+        timeEl.classList.add("status-upcoming");
+    }
+
+    // Populate scorers
+    const homeScorersList = document.getElementById("console-home-scorers");
+    const awayScorersList = document.getElementById("console-away-scorers");
+    homeScorersList.innerHTML = "";
+    awayScorersList.innerHTML = "";
+
+    try {
+        if (game.home_scorers && game.home_scorers !== "null") {
+            const array = game.home_scorers.startsWith("{") ? JSON.parse(game.home_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.home_scorers];
+            array.forEach(s => homeScorersList.innerHTML += `<div>${s}</div>`);
+        }
+        if (game.away_scorers && game.away_scorers !== "null") {
+            const array = game.away_scorers.startsWith("{") ? JSON.parse(game.away_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.away_scorers];
+            array.forEach(s => awayScorersList.innerHTML += `<div>${s}</div>`);
+        }
+    } catch (e) {
+        // Fallback simple parsing
+        homeScorersList.textContent = game.home_scorers !== "null" ? game.home_scorers.replace(/[{}"]/g, "") : "";
+        awayScorersList.textContent = game.away_scorers !== "null" ? game.away_scorers.replace(/[{}"]/g, "") : "";
+    }
+
+    // Populate Stats Grid
+    const statsGrid = document.getElementById("console-stats-grid");
+    statsGrid.innerHTML = "";
+
+    const buildConsoleStatBar = (title, valHome, valAway) => {
+        const intHome = parseInt(valHome) || 0;
+        const intAway = parseInt(valAway) || 0;
+        const total = intHome + intAway;
+        const pctHome = total > 0 ? (intHome / total) * 100 : 50;
+        const pctAway = total > 0 ? (intAway / total) * 100 : 50;
+
+        return `
+            <div class="split-bar-metric" style="margin-bottom: 8px;">
+                <div class="split-bar-col team1-side">
+                    <span class="split-val" style="font-size: 13px;">${valHome}</span>
+                    <div class="split-track" style="height: 6px; background: rgba(255,255,255,0.06);">
+                        <div class="split-fill" style="width: ${pctHome}%; background: #10b981; margin-left: auto;"></div>
+                    </div>
+                </div>
+                <div class="split-bar-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">${title}</div>
+                <div class="split-bar-col team2-side">
+                    <div class="split-track" style="height: 6px; background: rgba(255,255,255,0.06);">
+                        <div class="split-fill" style="width: ${pctAway}%; background: #60a5fa;"></div>
+                    </div>
+                    <span class="split-val" style="font-size: 13px;">${valAway}</span>
+                </div>
+            </div>
+        `;
+    };
+
+    statsGrid.innerHTML = `
+        ${buildConsoleStatBar("Possession", `${state.stats.possession}%`, `${100 - state.stats.possession}%`)}
+        ${buildConsoleStatBar("Shots", state.stats.shotsHome, state.stats.shotsAway)}
+        ${buildConsoleStatBar("Shots on Target", state.stats.shotsOnTargetHome, state.stats.shotsOnTargetAway)}
+        ${buildConsoleStatBar("Fouls", state.stats.foulsHome, state.stats.foulsAway)}
+        ${buildConsoleStatBar("Goalkeeper Saves", state.stats.savesHome, state.stats.savesAway)}
+        ${buildConsoleStatBar("Corners", state.stats.cornersHome, state.stats.cornersAway)}
+    `;
+
+    // Populate Timeline Log
+    const timelineLog = document.getElementById("console-timeline-log");
+    timelineLog.innerHTML = "";
+
+    if (state.timeline.length === 0) {
+        state.timeline.push({
+            min: 0,
+            icon: "🚩",
+            desc: `Kickoff at <strong>${getStadiumName(game.stadium_id)}</strong> under the night floodlights!`
+        });
+    }
+
+    state.timeline.forEach(event => {
+        const evCard = document.createElement("div");
+        evCard.className = "timeline-event-card";
+        evCard.innerHTML = `
+            <span class="t-event-time">${event.min}'</span>
+            <span class="t-event-icon">${event.icon}</span>
+            <span class="t-event-desc">${event.desc}</span>
+        `;
+        timelineLog.appendChild(evCard);
+    });
+
+    timelineLog.scrollTop = timelineLog.scrollHeight;
+};
+
+// 3-Second Live Simulation Ticker
+const tickLiveMatchesSimulation = () => {
+    const todayMatches = getTodayMatches();
+    let hasLiveUpdates = false;
+
+    todayMatches.forEach(game => {
+        const isLive = game.finished === "FALSE" && game.time_elapsed !== "notstarted";
+        if (!isLive) return;
+
+        const state = liveStates[game.id];
+        if (!state || state.finished) return;
+
+        // 1. Increment minutes slowly (e.g. 1 match minute every 4 ticks / 12 seconds)
+        if (Math.random() < 0.25) {
+            state.minute++;
+            hasLiveUpdates = true;
+            if (state.minute >= 90) {
+                state.finished = true;
+                state.timeline.push({
+                    min: 90,
+                    icon: "🏁",
+                    desc: `<strong>Full Time!</strong> The referee blows the final whistle. The match ends.`
+                });
+                SoundEffects.playWhistle();
+            }
+        }
+
+        // 2. Simulate random play-by-play events
+        const rand = Math.random();
+        if (rand < 0.25 && !state.finished) { // 25% chance of game play action event
+            hasLiveUpdates = true;
+            const sideHome = Math.random() < 0.5;
+            const teamSelf = sideHome ? game.home_team_name_en : game.away_team_name_en;
+            const teamOpp = sideHome ? game.away_team_name_en : game.home_team_name_en;
+
+            const actionRand = Math.random();
+            if (actionRand < 0.3) {
+                // Midfield play / possession shift
+                const comments = [
+                    `<strong>${teamSelf}</strong> recovers the ball in the midfield circle, launching a build-up.`,
+                    `Intense pressing sequence from <strong>${teamSelf}</strong> as they block pass channels.`,
+                    `Nice tiki-taka sequence by <strong>${teamSelf}</strong> drawing defenders out.`,
+                    `Tension rising as <strong>${teamSelf}</strong> dominates the middle, looking for gaps.`
+                ];
+                state.stats.possession = Math.max(30, Math.min(70, state.stats.possession + (sideHome ? 2 : -2)));
+                state.timeline.push({
+                    min: state.minute,
+                    icon: "🏃‍♂️",
+                    desc: comments[Math.floor(Math.random() * comments.length)]
+                });
+            } else if (actionRand < 0.6) {
+                // Attack / Shot attempt
+                if (sideHome) state.stats.shotsHome++; else state.stats.shotsAway++;
+                const isTarget = Math.random() < 0.45;
+                if (isTarget) {
+                    if (sideHome) state.stats.shotsOnTargetHome++; else state.stats.shotsOnTargetAway++;
+                    
+                    const isGoal = Math.random() < 0.15; // 15% goal chance on shot on target
+                    if (isGoal) {
+                        if (sideHome) state.scoreHome++; else state.scoreAway++;
+                        state.timeline.push({
+                            min: state.minute,
+                            icon: "⚽",
+                            desc: `<strong>GOAL!</strong> A blistering shot fired by <strong>${teamSelf}</strong> splits the defense and lands in the net!`
+                        });
+                        SoundEffects.playWhistle();
+                        SoundEffects.playCrowd(true);
+                        updateLiveStandings(); // Refresh live points immediately
+                    } else {
+                        // Goalkeeper Save
+                        if (sideHome) state.stats.savesAway++; else state.stats.savesHome++;
+                        state.timeline.push({
+                            min: state.minute,
+                            icon: "🧤",
+                            desc: `Close! A powerful volley from <strong>${teamSelf}</strong> is brilliantly parried by the goalkeeper of <strong>${teamOpp}</strong>!`
+                        });
+                        SoundEffects.playCrowd(false);
+                    }
+                } else {
+                    // Shot off target
+                    state.timeline.push({
+                        min: state.minute,
+                        icon: "💨",
+                        desc: `Opportunity missed! <strong>${teamSelf}</strong> breaks into the box but curls the shot wide of the post.`
+                    });
+                }
+            } else if (actionRand < 0.85) {
+                // Foul or Offside
+                const isCard = Math.random() < 0.25;
+                if (sideHome) state.stats.foulsHome++; else state.stats.foulsAway++;
+                if (isCard) {
+                    state.timeline.push({
+                        min: state.minute,
+                        icon: "🟨",
+                        desc: `Yellow Card shown to defensive midfielder of <strong>${teamSelf}</strong> for a tactical slide tackle.`
+                    });
+                    SoundEffects.playBoo();
+                } else {
+                    const isOffside = Math.random() < 0.5;
+                    state.timeline.push({
+                        min: state.minute,
+                        icon: isOffside ? "🚩" : "💥",
+                        desc: isOffside
+                            ? `Offside flag raised. The forward line of <strong>${teamSelf}</strong> broke too early.`
+                            : `Foul committed by <strong>${teamSelf}</strong>. The referee awards a free-kick.`
+                    });
+                }
+            } else {
+                // Corner kick
+                if (sideHome) state.stats.cornersHome++; else state.stats.cornersAway++;
+                state.timeline.push({
+                    min: state.minute,
+                    icon: "🎯",
+                    desc: `Corner kick awarded to <strong>${teamSelf}</strong> after a defender blocks the cross.`
+                });
+                if (Math.random() < 0.35) SoundEffects.playChant();
+            }
+        }
+    });
+
+    if (hasLiveUpdates) {
+        // Redraw lists and update active console display
+        renderLiveMatches();
+        const activeGame = todayMatches.find(g => g.id === selectedLiveMatchId);
+        if (activeGame) {
+            updateConsoleDetails(activeGame);
+        }
+    }
+};
+
+const getStadiumName = (stadiumId) => {
+    const stadiums = {
+        "1": "Azteca Stadium, Mexico City",
+        "2": "Guadalajara Stadium, Zapopan",
+        "3": "Monterrey Stadium, Guadalupe",
+        "4": "Boston Stadium, Foxborough",
+        "5": "Houston Stadium, Houston",
+        "6": "Dallas Stadium, Arlington",
+        "7": "Los Angeles Stadium, Inglewood",
+        "8": "Miami Stadium, Gardens",
+        "9": "New York Stadium, East Rutherford",
+        "10": "Philadelphia Stadium, Philadelphia",
+        "11": "San Francisco Stadium, Santa Clara",
+        "12": "Seattle Stadium, Seattle",
+        "13": "Atlanta Stadium, Atlanta",
+        "14": "Kansas City Stadium, Kansas City",
+        "15": "Toronto Stadium, Toronto",
+        "16": "Vancouver Stadium, BC Place"
+    };
+    return stadiums[stadiumId] || "World Cup Stadium";
+};
+
+// Dynamic Standings Aggregator
+const updateLiveStandings = () => {
+    const container = document.getElementById("live-standings-container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const activeGame = worldCupGames.find(g => g.id === selectedLiveMatchId);
+    let groupsToRender = ["G", "H", "I"]; // Render these by default
+
+    // If a game is active, prioritize its group at the top
+    if (activeGame && activeGame.group && activeGame.group.length === 1) {
+        groupsToRender = [activeGame.group, ...groupsToRender.filter(g => g !== activeGame.group)];
+    }
+
+    groupsToRender.forEach(groupName => {
+        const groupTeams = aggregateGroupStandings(groupName);
+        if (groupTeams.length === 0) return;
+
+        const tableWrapper = document.createElement("div");
+        tableWrapper.className = "standings-table-wrapper";
+        tableWrapper.innerHTML = `
+            <h4>Group ${groupName} Live Standings</h4>
+            <table class="live-standings-tbl">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Team</th>
+                        <th style="text-align: center;">P</th>
+                        <th style="text-align: center;">GD</th>
+                        <th style="text-align: center;">Pts</th>
+                    </tr>
+                </thead>
+                <tbody id="standings-body-${groupName}">
+                    <!-- Loaded dynamically -->
+                </tbody>
+            </table>
+        `;
+
+        container.appendChild(tableWrapper);
+
+        const tbody = document.getElementById(`standings-body-${groupName}`);
+        groupTeams.forEach((team, idx) => {
+            const tr = document.createElement("tr");
+            if (idx < 2) tr.className = "advancing-pos"; // highlight top 2 advancing
+            
+            tr.innerHTML = `
+                <td class="standings-num">${idx + 1}</td>
+                <td class="standings-team-name">
+                    ${getWcTeamFlagHTML(team.name, "standings-tbl-flag")}
+                    <span>${team.name}</span>
+                </td>
+                <td style="text-align: center;">${team.p}</td>
+                <td style="text-align: center; color: ${team.gd > 0 ? '#10b981' : team.gd < 0 ? '#ef4444' : 'var(--text-muted)'};">${team.gd > 0 ? '+' + team.gd : team.gd}</td>
+                <td style="text-align: center; font-weight: 800;">${team.pts}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    });
+};
+
+const aggregateGroupStandings = (groupName) => {
+    // Find all teams in the group
+    const teamsMap = {};
+    
+    // Scan all games in the group stage to identify group members and aggregate scores
+    worldCupGames.forEach(game => {
+        if (game.group !== groupName || game.type !== "group") return;
+
+        const h = game.home_team_name_en;
+        const a = game.away_team_name_en;
+
+        if (!teamsMap[h]) teamsMap[h] = { name: h, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
+        if (!teamsMap[a]) teamsMap[a] = { name: a, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
+
+        // Get active live scores or final API scores
+        const state = liveStates[game.id];
+        let scoreH = 0;
+        let scoreA = 0;
+        let isPlayed = false;
+
+        if (state) {
+            scoreH = state.scoreHome;
+            scoreA = state.scoreAway;
+            isPlayed = game.finished === "TRUE" || (game.finished === "FALSE" && game.time_elapsed !== "notstarted");
+        } else {
+            scoreH = parseInt(game.home_score) || 0;
+            scoreA = parseInt(game.away_score) || 0;
+            isPlayed = game.finished === "TRUE";
+        }
+
+        if (isPlayed) {
+            teamsMap[h].p++;
+            teamsMap[a].p++;
+
+            teamsMap[h].gf += scoreH;
+            teamsMap[h].ga += scoreA;
+            teamsMap[a].gf += scoreA;
+            teamsMap[a].ga += scoreH;
+
+            if (scoreH > scoreA) {
+                teamsMap[h].w++;
+                teamsMap[h].pts += 3;
+                teamsMap[a].l++;
+            } else if (scoreA > scoreH) {
+                teamsMap[a].w++;
+                teamsMap[a].pts += 3;
+                teamsMap[h].l++;
+            } else {
+                teamsMap[h].d++;
+                teamsMap[h].pts += 1;
+                teamsMap[a].d++;
+                teamsMap[a].pts += 1;
+            }
+        }
+    });
+
+    const result = Object.values(teamsMap);
+    result.forEach(t => t.gd = t.gf - t.ga);
+
+    // Sort: Points -> GD -> GF -> Alphabetical
+    return result.sort((x, y) => {
+        if (y.pts !== x.pts) return y.pts - x.pts;
+        if (y.gd !== x.gd) return y.gd - x.gd;
+        if (y.gf !== x.gf) return y.gf - x.gf;
+        return x.name.localeCompare(y.name);
+    });
+};
+
+// Full schedule explorer search/filters
+const openExplorer = () => {
+    document.getElementById("explorer-overlay").classList.add("open");
+    document.getElementById("explorer-search").value = "";
+    filterExplorerGames("all", "");
+};
+
+const closeExplorer = () => {
+    document.getElementById("explorer-overlay").classList.remove("open");
+};
+
+const filterExplorerGames = (filter, searchVal) => {
+    const grid = document.getElementById("explorer-games-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    const query = searchVal.toLowerCase().trim();
+
+    // Sort games by matchday or ID
+    const sorted = [...worldCupGames].sort((x, y) => parseInt(x.id) - parseInt(y.id));
+
+    sorted.forEach(game => {
+        const hName = game.home_team_name_en;
+        const aName = game.away_team_name_en;
+
+        const matchesSearch = hName.toLowerCase().includes(query) || 
+                              aName.toLowerCase().includes(query) || 
+                              (game.group && game.group.toLowerCase().includes(query));
+
+        let matchesFilter = true;
+        if (filter === "finished") matchesFilter = game.finished === "TRUE";
+        else if (filter === "upcoming") matchesFilter = game.finished === "FALSE" && game.time_elapsed === "notstarted";
+        else if (filter === "knockout") matchesFilter = game.type !== "group";
+
+        if (matchesSearch && matchesFilter) {
+            const card = document.createElement("div");
+            card.className = "live-match-card";
+            card.style.cursor = "default"; // static details
+
+            const scoreText = game.finished === "TRUE" ? `${game.home_score} - ${game.away_score}` : "vs";
+            const dateStr = game.local_date ? game.local_date.split(" ")[0] : "";
+
+            card.innerHTML = `
+                <div class="m-card-teams">
+                    <div class="m-card-team-row">
+                        ${getWcTeamFlagHTML(hName, "m-card-flag")}
+                        <span class="m-card-team-name">${hName}</span>
+                    </div>
+                    <div class="m-card-team-row">
+                        ${getWcTeamFlagHTML(aName, "m-card-flag")}
+                        <span class="m-card-team-name">${aName}</span>
+                    </div>
+                </div>
+                <div class="m-card-score-box" style="width: 35%; align-items: flex-end;">
+                    <span class="m-card-score" style="font-size: 15px;">${scoreText}</span>
+                    <span class="m-card-meta">${game.group} • ${dateStr}</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        }
+    });
+
+    if (grid.children.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 30px; font-size: 13.5px;">No matches found matching criteria.</div>`;
+    }
+};
+
+// Wire up events on load
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Gateway switch theme button
+    document.getElementById("unlock-live-btn")?.addEventListener("click", () => {
+        const themeBtn = document.getElementById("theme-toggle");
+        if (themeBtn && !document.body.classList.contains('dark-theme')) {
+            themeBtn.click();
+        }
+        document.body.classList.add('world-cup-active');
+        activateLiveArena();
+    });
+
+    // 1b. Gateway open archive button (Dark Mode option)
+    document.getElementById("open-archive-btn")?.addEventListener("click", () => {
+        document.body.classList.add('world-cup-active');
+        activateLiveArena();
+    });
+
+    // 2. Return to comparison dashboard
+    document.getElementById("arena-back-btn")?.addEventListener("click", () => {
+        document.body.classList.remove('world-cup-active');
+        deactivateLiveArena();
+    });
+
+    // 3. Explorer Overlay close/open bindings
+    document.getElementById("explore-all-btn")?.addEventListener("click", openExplorer);
+    document.getElementById("explorer-close")?.addEventListener("click", closeExplorer);
+    document.getElementById("explorer-overlay")?.addEventListener("click", (e) => {
+        if (e.target === document.getElementById("explorer-overlay")) closeExplorer();
+    });
+
+    // 4. Explorer Search filter keyup listener
+    const searchInput = document.getElementById("explorer-search");
+    searchInput?.addEventListener("input", (e) => {
+        const activeTab = document.querySelector("#explorer-filter-tabs .filter-btn.active");
+        const activeFilter = activeTab ? activeTab.dataset.filter : "all";
+        filterExplorerGames(activeFilter, e.target.value);
+    });
+
+    // 5. Explorer Filter tabs click listener
+    document.getElementById("explorer-filter-tabs")?.addEventListener("click", (e) => {
+        const btn = e.target.closest(".filter-btn");
+        if (!btn) return;
+        document.querySelectorAll("#explorer-filter-tabs .filter-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const query = document.getElementById("explorer-search").value;
+        filterExplorerGames(btn.dataset.filter, query);
+    });
+});
+
