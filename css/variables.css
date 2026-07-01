@@ -1,0 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --container-bg: rgba(255, 255, 255, 0.9);
+    --card-bg: #ffffff;
+    --card-hover-bg: #fafafa;
+    --border-color: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+    
+    --accent-dark: #0f172a;
+    --accent-dark-hover: #1e293b;
+    --accent-blue: #3b82f6;
+    --accent-blue-soft: #eff6ff;
+    --accent-gold: #b45309;
+    --accent-gold-soft: #fef3c7;
+    
+    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.06), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+
+    --iphone-w: 412px;
+    --iphone-h: 892px;
+}
+
+body.dark-theme,
+.dark-theme {
+    --bg-primary: #05070c;
+    --bg-secondary: #0a0f1d;
+    --container-bg: rgba(10, 15, 29, 0.72);
+    --card-bg: rgba(18, 24, 43, 0.86);
+    --card-hover-bg: rgba(27, 36, 64, 0.92);
+    --border-color: rgba(255, 255, 255, 0.06);
+    --border-hover: rgba(56, 189, 248, 0.24);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-light: #64748b;
+    
+    --accent-dark: #f8fafc;
+    --accent-dark-hover: #ffffff;
+    --accent-blue: #38bdf8;
+    --accent-blue-soft: rgba(56, 189, 248, 0.12);
+    --accent-gold: #fbbf24;
+    --accent-gold-soft: rgba(251, 191, 36, 0.12);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-primary);
+    font-family: var(--font-body);
+    color: var(--text-main);
+}
+
+body {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+body.dark-theme {
+    background: linear-gradient(135deg, #090e1a 0%, #030509 100%) !important;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+    z-index: 0;
+    pointer-events: none;
+}
+
+body.dark-theme::before {
+    background-image: radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+    opacity: 0.7;
+}
+
+body.dark-theme::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at top left, rgba(56, 189, 248, 0.14), transparent 34%),
+        radial-gradient(ellipse at bottom right, rgba(251, 191, 36, 0.09), transparent 30%),
+        radial-gradient(circle at center, transparent 0%, rgba(2, 6, 23, 0.35) 72%, rgba(2, 6, 23, 0.8) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+#confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* Smartphone Mockup Frame Wrapper Container */
+#phone-viewport {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--bg-primary);
+    transition: background 0.3s ease;
+}
+
+body.dark-theme #phone-viewport {
+    background: var(--bg-secondary);
+}
+
+/* Scrollbars for app content */
+#phone-viewport::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+#phone-viewport::-webkit-scrollbar-track {
+    background: transparent;
+}
+#phone-viewport::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.2);
+    border-radius: 99px;
+}
+#phone-viewport::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.4);
+}
+
+/* Desktop Centering Mock Frame setup */
+@media (min-width: 768px) {
+    body {
+        padding: 24px;
+        background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+    }
+
+    body.dark-theme {
+        background: linear-gradient(135deg, #020617 0%, #000000 100%) !important;
+    }
+
+    /* Wrap client frame inside mock smartphone chassis */
+    #phone-viewport {
+        width: var(--iphone-w);
+        height: var(--iphone-h);
+        border-radius: 44px;
+        box-shadow: 
+            0 25px 50px -12px rgba(0,0,0,0.8),
+            0 0 0 12px #1e293b,
+            0 0 0 13px #334155,
+            inset 0 4px 6px rgba(255,255,255,0.15);
+        border: 4px solid #0f172a;
+        margin: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        align-self: center;
+        aspect-ratio: 412 / 892;
+    }
+
+    body.dark-theme #phone-viewport {
+        box-shadow: 
+            0 25px 50px -12px rgba(0,0,0,0.9),
+            0 0 0 12px #0a0f1d,
+            0 0 0 13px #1e293b,
+            inset 0 4px 6px rgba(255,255,255,0.05);
+        border: 4px solid #020617;
+    }
+}

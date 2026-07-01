@@ -1,0 +1,288 @@
+/* Team Overview Cards stack layout */
+.dashboard-overview-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.team-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.team-card.better-team {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 20px rgba(180, 83, 9, 0.12);
+}
+
+.team-card.better-team::before {
+    content: '⭐ WINNER ODDS';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--accent-gold);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.team-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.dashboard-flag-img {
+    width: 38px;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: var(--shadow-sm);
+}
+
+.team-card-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.team-card h3 {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.team-confed {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    font-size: 13px;
+    transition: background 0.2s ease;
+}
+
+.stat-item.highlight-win {
+    background: var(--accent-blue-soft);
+    font-weight: 600;
+}
+
+.stat-label {
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.stat-item.highlight-win .stat-value {
+    color: var(--accent-blue);
+}
+
+.scorer-stat-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.scorer-stat-value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+}
+
+/* Sliding Tab System styling */
+.tabs-nav-wrapper {
+    margin: 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-primary);
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tabs-nav {
+    display: flex;
+    background: var(--bg-secondary);
+    border-radius: 14px;
+    padding: 4px;
+    position: relative;
+    gap: 2px;
+}
+
+.tab-slider {
+    position: absolute;
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+}
+
+.tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: clamp(10px, 3vw, 14px) 6px;
+    font-family: var(--font-heading);
+    font-size: clamp(11px, 2.9vw, 13px);
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 2;
+    transition: color 0.2s ease;
+    outline: none;
+}
+
+.tab-btn.active {
+    color: var(--text-main);
+}
+
+.tab-btn svg {
+    opacity: 0.65;
+    transition: opacity 0.2s ease;
+}
+
+.tab-btn.active svg {
+    opacity: 1;
+}
+
+/* Tab Panels */
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.4s ease forwards;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* Split metrics ratio progress bars */
+.split-bars-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+}
+
+.split-bar-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.split-bar-label {
+    font-size: clamp(9.5px, 2.8vw, 12px);
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.split-bar-col {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+}
+
+.split-val {
+    font-family: var(--font-heading);
+    font-size: clamp(11.5px, 3.2vw, 14px);
+    font-weight: 850;
+    color: var(--text-main);
+}
+
+.split-track {
+    height: 8px;
+    flex-grow: 1;
+    background: var(--bg-secondary);
+    border-radius: 99px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border-color);
+}
+
+.split-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.split-fill.team1-fill {
+    background: linear-gradient(90deg, var(--text-muted), var(--team1-theme, var(--accent-dark)));
+    margin-left: auto;
+}
+
+.split-fill.team2-fill {
+    background: linear-gradient(90deg, var(--team2-theme, var(--accent-dark)), var(--text-muted));
+}
+
+/* General Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dark Mode Overrides */
+body.dark-theme .team-card.better-team {
+    box-shadow: 0 0 25px rgba(251, 191, 36, 0.15);
+}
+body.dark-theme .tab-slider {
+    background: rgba(27, 36, 64, 0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+body.dark-theme .stat-item {
+    background: rgba(255, 255, 255, 0.03);
+}
+body.dark-theme .stat-item.highlight-win {
+    background: rgba(56, 189, 248, 0.08);
+}
+body.dark-theme .stat-item.highlight-win .stat-value {
+    color: var(--accent-blue);
+}

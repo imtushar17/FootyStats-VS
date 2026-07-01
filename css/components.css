@@ -1,0 +1,595 @@
+/* Base Layout Components styling */
+
+header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.logo-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.globe-icon {
+    font-size: 28px;
+    animation: pulseGlobe 6s ease-in-out infinite;
+    display: inline-block;
+}
+
+header h1 {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -1px;
+}
+
+header h1 span {
+    color: var(--accent-blue);
+}
+
+body.dark-theme header h1 span {
+    color: var(--accent-blue);
+}
+
+.tagline {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Compare form launcher button wrapper */
+.form-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.compare-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent-dark);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: var(--shadow-md);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+.compare-btn:hover {
+    background: var(--accent-dark-hover);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1.5px);
+}
+
+.compare-btn:active {
+    transform: translateY(0);
+}
+
+body.dark-theme .compare-btn {
+    color: #0a0f1d !important;
+}
+
+.btn-icon {
+    transition: transform 0.4s ease;
+}
+
+.compare-btn:hover .btn-icon {
+    transform: rotate(180deg);
+}
+
+/* Control Toggle settings buttons */
+.control-toggle-btn {
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.control-toggle-btn:hover {
+    background: var(--card-bg);
+    color: var(--text-main);
+    transform: scale(1.06);
+}
+
+.control-toggle-btn.active {
+    background: var(--accent-blue-soft);
+    color: var(--accent-blue);
+    border-color: rgba(56, 189, 248, 0.2);
+}
+
+/* Floating controls wrapper */
+.header-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 14px 16px 8px 16px;
+    background: var(--bg-primary);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+body.dark-theme .header-controls {
+    background: var(--bg-secondary);
+}
+
+/* Common variables utilities */
+.hidden {
+    display: none !important;
+}
+
+/* FlagCDN Image icons */
+.flag-icon-img {
+    height: 0.9em;
+    width: 1.35em;
+    object-fit: cover;
+    border-radius: 2px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: inline-block;
+    vertical-align: middle;
+    margin-top: -2px;
+}
+
+/* Particle or Lightbox Shimmer animations definitions */
+@keyframes pulseGlobe {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.95; }
+    50% { transform: scale(1.05) rotate(5deg); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Translucent Dark Mode transition overlay styles */
+.dark-mode-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 7, 12, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 999999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.dark-mode-transition-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.dark-mode-transition-overlay .transition-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    animation: scaleInTransition 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark-mode-transition-overlay .transition-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3.5px solid rgba(56, 189, 248, 0.15);
+    border-top: 3.5px solid #38bdf8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+}
+
+.dark-mode-transition-overlay .transition-text {
+    font-family: var(--font-heading);
+    font-size: 19px;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+/* Translucent Light Mode transition overlay styles */
+.light-mode-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(248, 250, 252, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 999999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.light-mode-transition-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.light-mode-transition-overlay .transition-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    animation: scaleInTransition 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.light-mode-transition-overlay .transition-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3.5px solid rgba(59, 130, 246, 0.15);
+    border-top: 3.5px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+.light-mode-transition-overlay .transition-text {
+    font-family: var(--font-heading);
+    font-size: 19px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes scaleInTransition {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Graceful floating entry for Live Gateway Ticket / Matchday Archive card */
+.live-gateway-ticket.float-entry-hidden {
+    opacity: 0 !important;
+    transform: translateY(35px) !important;
+    pointer-events: none;
+}
+
+.live-gateway-ticket.float-entry-animate {
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s ease !important;
+}
+
+/* "Entering the BIG STAGE" overlay styles */
+.big-stage-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.big-stage-transition-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.big-stage-transition-overlay .overlay-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(10, 15, 29, 0.45) 0%, rgba(5, 7, 12, 0.98) 100%),
+                url('../assets/fifa_2026_poster.png') no-repeat center center;
+    background-size: cover;
+    transform: scale(1.08);
+}
+
+.big-stage-transition-overlay.visible .overlay-bg {
+    animation: posterKenBurns 5.0s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.big-stage-transition-overlay .transition-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 30px;
+    border-radius: 24px;
+    background: rgba(10, 15, 29, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    max-width: 90%;
+    width: 340px;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+}
+
+.big-stage-transition-overlay.visible .transition-content {
+    transform: translateY(0);
+    opacity: 1;
+    transition-delay: 0.1s;
+}
+
+.big-stage-transition-overlay .pulse-gold-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    border-radius: 20px;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    color: #fbbf24;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.big-stage-transition-overlay .gold-dot {
+    width: 6px;
+    height: 6px;
+    background: #fbbf24;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #fbbf24;
+    animation: goldPulse 1.5s infinite;
+}
+
+.big-stage-transition-overlay .transition-text {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.big-stage-transition-overlay .transition-subtext {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(248, 250, 252, 0.7);
+    letter-spacing: 0.5px;
+}
+
+@keyframes posterKenBurns {
+    from { transform: scale(1.08); }
+    to { transform: scale(1.01); }
+}
+
+@keyframes goldPulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #fbbf24; }
+}
+
+/* Calendar view overrides and container styling */
+.calendar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    animation: fadeIn 0.4s ease;
+}
+
+.calendar-month-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-main);
+    text-align: center;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--text-light);
+    text-transform: uppercase;
+    padding-bottom: 4px;
+}
+
+.calendar-day-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.calendar-day-cell.empty {
+    background: transparent;
+    border-color: transparent;
+    cursor: default;
+    pointer-events: none;
+}
+
+.calendar-day-cell:not(.empty):hover {
+    transform: scale(1.06);
+    border-color: var(--accent-blue);
+    box-shadow: var(--shadow-sm);
+}
+
+.calendar-day-cell.inactive-date {
+    opacity: 0.55;
+    background: var(--bg-primary);
+}
+
+.calendar-day-cell.inactive-date:hover {
+    border-color: #ef4444;
+}
+
+.calendar-day-cell.active-matchday {
+    background: var(--accent-blue-soft);
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.calendar-day-cell.active-matchday::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    width: 5px;
+    height: 5px;
+    background: var(--accent-blue);
+    border-radius: 50%;
+}
+
+.calendar-day-cell.selected-date {
+    background: var(--accent-blue) !important;
+    border-color: var(--accent-blue) !important;
+    color: #ffffff !important;
+}
+
+.calendar-day-cell.selected-date::after {
+    background: #ffffff;
+}
+
+/* Day's Matches Subview */
+.day-matches-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: slideInFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.day-matches-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.day-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.day-back-btn:hover {
+    background: var(--card-bg);
+    color: var(--accent-blue);
+    border-color: var(--border-hover);
+}
+
+.day-matches-title {
+    font-family: var(--font-heading);
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+/* Wrong date alert toast */
+.calendar-toast-alert {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(239, 68, 68, 0.95);
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-family: var(--font-heading);
+    font-size: 13.5px;
+    font-weight: 700;
+    box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4);
+    z-index: 9999999;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.calendar-toast-alert.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+@keyframes slideInFromRight {
+    from { transform: translateX(15px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+

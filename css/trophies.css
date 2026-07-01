@@ -1,0 +1,523 @@
+/* Cabinet Showcase Wooden Shelf layout */
+.cabinet-showcase {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.cabinet-showcase::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--cabinet-color, var(--text-muted)), transparent);
+}
+
+.cabinet-title {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cabinet-shelves {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cabinet-shelf {
+    background: rgba(15, 23, 42, 0.015);
+    border: 1px solid var(--border-color);
+    border-bottom: 12px solid #78350f; /* Mahogany wood shelf edge */
+    border-radius: 12px;
+    padding: 16px 16px 20px 16px;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    min-height: 100px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.06), inset 0 2px 4px rgba(255,255,255,0.05);
+    position: relative;
+}
+
+.cabinet-shelf::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: radial-gradient(ellipse at 50% 0%, rgba(251, 191, 36, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 12px 12px 0 0;
+}
+
+.trophy-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 10;
+}
+
+.trophy-item:hover {
+    transform: translateY(-5px) scale(1.08);
+}
+
+.trophy-visual-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: relative;
+}
+
+.trophy-multiplier {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--accent-gold);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.trophy-svg {
+    width: 42px;
+    height: 42px;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.12));
+    transition: filter 0.3s ease;
+}
+
+.trophy-item.empty-trophy .trophy-svg {
+    opacity: 0.2;
+    filter: grayscale(1);
+}
+
+.trophy-item:not(.empty-trophy):hover .trophy-svg {
+    filter: drop-shadow(0 0 12px var(--trophy-glow, #f59e0b)) drop-shadow(0 3px 6px rgba(0,0,0,0.15));
+}
+
+.trophy-name {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 8px;
+    text-align: center;
+    max-width: 70px;
+    line-height: 1.2;
+}
+
+/* Elegant CSS Tooltip */
+.trophy-item[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: rgba(15, 23, 42, 0.95);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 50;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.trophy-item[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Trophy Lightbox Overlay System */
+.trophy-lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.trophy-lightbox-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+    animation: trophy-lb-overlay-in 0.3s ease forwards;
+}
+
+.trophy-lightbox-overlay.closing {
+    animation: trophy-lb-overlay-out 0.28s ease forwards;
+    pointer-events: none;
+}
+
+.trophy-lightbox-card {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    background: radial-gradient(circle at 50% 0%, 
+        color-mix(in srgb, var(--lb-primary) 28%, #030712) 0%, 
+        color-mix(in srgb, var(--lb-secondary) 10%, #030712) 60%, 
+        #030712 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 
+        0 30px 80px rgba(0,0,0,0.85), 
+        0 0 50px color-mix(in srgb, var(--lb-primary) 20%, transparent),
+        inset 0 1px 0 rgba(255,255,255,0.12);
+    animation: trophy-lb-in 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    --lb-primary: #f59e0b;
+    --lb-secondary: #ffffff;
+}
+
+.trophy-lightbox-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+        radial-gradient(circle at 50% 36%, transparent 72px, rgba(255, 255, 255, 0.02) 74px, rgba(255, 255, 255, 0.02) 75px, transparent 77px),
+        linear-gradient(to right, transparent 49.5%, rgba(255, 255, 255, 0.015) 50%, rgba(255, 255, 255, 0.015) 50.5%, transparent 51%);
+    background-size: 100% 100%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.95;
+}
+
+.trophy-lightbox-card.closing {
+    animation: trophy-lb-out 0.28s ease forwards;
+}
+
+.trophy-lb-particles-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.trophy-lb-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 30;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s, transform 0.25s;
+    backdrop-filter: blur(8px);
+}
+
+.trophy-lb-close:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    transform: rotate(90deg) scale(1.12);
+}
+
+.trophy-lb-hero {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 35px 20px 10px;
+    min-height: 120px;
+    background: transparent;
+}
+
+.trophy-lb-flag-hero {
+    position: relative;
+    margin-top: 10px;
+    margin-bottom: 16px;
+    z-index: 5;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.trophy-lb-flag-img {
+    width: 130px; /* enlarged */
+    height: 80px; /* enlarged */
+    object-fit: cover;
+    border-radius: 14px; /* premium rounded corners */
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.08);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.trophy-lb-flag-img:hover {
+    transform: scale(1.06);
+}
+
+.trophy-lb-hero-glow {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, 
+        color-mix(in srgb, var(--lb-primary) 60%, transparent) 0%, 
+        color-mix(in srgb, var(--lb-secondary) 30%, transparent) 40%, 
+        transparent 70%
+    );
+    opacity: 0.6;
+    filter: blur(28px);
+    pointer-events: none;
+    z-index: 1;
+    animation: aurora-pulse 8s ease-in-out infinite;
+}
+
+@keyframes aurora-pulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        opacity: 0.55;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.15) rotate(180deg);
+        opacity: 0.75;
+    }
+}
+
+.trophy-lb-competition-badge {
+    text-align: center;
+    z-index: 5;
+}
+
+#trophy-lb-title {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+
+.trophy-lb-body {
+    padding: 16px 24px 28px;
+    background: transparent;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.trophy-lb-showcase {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.trophy-lb-showcase::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    width: 48px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    filter: blur(4px);
+    border-radius: 50%;
+    z-index: 1;
+    animation: shadow-scale 3.5s ease-in-out infinite;
+}
+
+.trophy-lb-glow-ring {
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,255,255,0.06);
+    box-shadow: 0 0 40px color-mix(in srgb, var(--lb-primary) 30%, transparent);
+    animation: rotateRing 20s linear infinite;
+}
+
+.trophy-lb-trophy-wrap {
+    z-index: 5;
+    animation: trophy-float 3.5s ease-in-out infinite;
+}
+
+.trophy-lb-trophy-wrap .trophy-svg {
+    width: 64px;
+    height: 64px;
+}
+
+@keyframes shadow-scale {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.85;
+    }
+    50% {
+        transform: scale(0.65);
+        opacity: 0.35;
+        filter: blur(6px);
+    }
+}
+
+@keyframes rotateRing {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes trophy-float {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+    }
+    50% {
+        transform: translateY(-16px) scale(1.04);
+        filter: drop-shadow(0 20px 24px color-mix(in srgb, var(--lb-primary) 30%, rgba(0,0,0,0.5)));
+    }
+}
+
+.trophy-lb-count-block {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.trophy-lb-count-num {
+    font-family: var(--font-heading);
+    font-size: 48px;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.trophy-lb-count-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+}
+
+.trophy-lb-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin-bottom: 20px;
+}
+
+.trophy-lb-timeline-section {
+    width: 100%;
+}
+
+.trophy-lb-years-heading {
+    font-size: 11px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.trophy-lb-years-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.trophy-lb-year-chip {
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.trophy-lb-year-chip:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.trophy-lb-empty {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    color: rgba(255,255,255,0.3);
+    padding: 20px;
+}
+
+.trophy-lb-empty.visible {
+    display: flex;
+}
+
+/* Lightbox Animations */
+@keyframes trophy-lb-in {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes trophy-lb-out {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+}
+
+@keyframes trophy-lb-overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes trophy-lb-overlay-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Dark Mode Shelves styles overrides */
+body.dark-theme .cabinet-shelf {
+    background: rgba(255, 255, 255, 0.005);
+    border-bottom-color: #5c2c16;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+body.dark-theme .trophy-multiplier {
+    color: #fcd34d;
+}

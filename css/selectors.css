@@ -1,0 +1,337 @@
+.selection-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 480px) {
+    .selection-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .vs-divider {
+        flex-direction: row;
+        margin: 8px 0;
+    }
+}
+
+.team-picker-trigger {
+    width: 100%;
+    padding: 16px 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    text-align: left;
+}
+
+.team-picker-trigger:hover {
+    background: var(--card-bg);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+.team-picker-trigger:focus {
+    background: var(--card-bg);
+    border-color: var(--text-main);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+}
+
+.trigger-flag {
+    font-size: 32px;
+    line-height: 1;
+    display: inline-block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+    transition: transform 0.2s ease;
+}
+
+.team-picker-trigger:hover .trigger-flag {
+    transform: scale(1.1);
+}
+
+.trigger-name {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    flex-grow: 1;
+}
+
+.chevron-icon {
+    color: var(--text-light);
+    transition: transform 0.2s ease;
+}
+
+.team-picker-trigger:hover .chevron-icon {
+    color: var(--text-muted);
+}
+
+.vs-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.vs-badge-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.vs-badge-circle span {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+
+.vs-divider-text {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Modal Overlay & Dialog styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 375px;
+    margin: 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    box-shadow: var(--shadow-xl);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+    transform: translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-overlay.open .modal-box {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.modal-close-btn {
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    transform: scale(1.05);
+}
+
+.modal-search-wrapper {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    pointer-events: none;
+}
+
+#modal-search {
+    width: 100%;
+    padding: 14px 14px 14px 44px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    background: var(--bg-primary);
+    color: var(--text-main);
+    transition: all 0.25s ease;
+}
+
+#modal-search:focus {
+    background: var(--card-bg);
+    border-color: var(--text-main);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+}
+
+.modal-filter-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.modal-filter-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-tab {
+    padding: 8px 14px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-main);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.filter-tab:hover {
+    border-color: var(--border-hover);
+    background: var(--card-bg);
+    color: var(--accent-blue);
+}
+
+.filter-tab.active {
+    background: var(--accent-blue) !important;
+    border-color: var(--accent-blue) !important;
+    color: #ffffff !important;
+}
+
+.modal-team-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+    max-height: 40vh;
+}
+
+.modal-team-card {
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-team-card:hover {
+    background: var(--card-bg);
+    border-color: var(--text-main);
+    box-shadow: var(--shadow-sm);
+}
+
+.modal-team-card.selected-elsewhere {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.modal-team-card.selected-elsewhere:hover {
+    transform: none;
+    border-color: var(--border-color);
+    box-shadow: none;
+    background: var(--bg-primary);
+}
+
+.modal-card-flag {
+    font-size: 24px;
+}
+
+.modal-card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.modal-card-ranking {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Dark Mode Overrides */
+body.dark-theme .modal-box {
+    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+body.dark-theme .modal-team-card:hover {
+    background: var(--card-hover-bg);
+    border-color: var(--border-hover);
+}
+body.dark-theme .vs-badge-circle {
+    background: var(--accent-blue);
+}
+body.dark-theme .vs-divider-text {
+    color: var(--accent-blue);
+}
+body.dark-theme .team-picker-trigger:hover {
+    background: var(--card-hover-bg);
+}
