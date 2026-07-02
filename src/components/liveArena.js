@@ -3,10 +3,12 @@ import { getStartingXI } from '../data/lineups.js';
 
 let worldCupGames = [];
 let selectedLiveMatchId = null;
-let liveMatchInterval = null;
-let apiPollInterval = null;
 const liveStates = {};
-const lineupsCache = {};
+
+let currentLiveMatches = [];
+let currentSelectedMatchDetails = null;
+let dataFeedError = null;
+let matchesListInterval = null;
 
 const OFFICIAL_IST_MAP = {
     "1": { date: "Jun 12", dateFull: "Jun 12, 2026", dateLong: "Friday, June 12, 2026", time: "00:30 IST", full: "Jun 12, 2026 • 00:30 IST" },
@@ -230,105 +232,6 @@ const ADDITIONAL_FLAGS = {
     "United States": "us"
 };
 
-const FALLBACK_WORLD_CUP_GAMES = [
-    {
-        id: "61",
-        home_team_name_en: "Senegal",
-        away_team_name_en: "Iraq",
-        home_score: "0",
-        away_score: "0",
-        home_scorers: "null",
-        away_scorers: "null",
-        group: "I",
-        matchday: "3",
-        local_date: "06/26/2026 15:00",
-        stadium_id: "12",
-        finished: "FALSE",
-        time_elapsed: "45",
-        type: "group"
-    },
-    {
-        id: "62",
-        home_team_name_en: "Norway",
-        away_team_name_en: "France",
-        home_score: "1",
-        away_score: "2",
-        home_scorers: "{\"Erling Haaland 22'\"}",
-        away_scorers: "{\"Kylian Mbappé 12'\",\"Ousmane Dembélé 55'\"}",
-        group: "I",
-        matchday: "3",
-        local_date: "06/26/2026 15:00",
-        stadium_id: "9",
-        finished: "FALSE",
-        time_elapsed: "78",
-        type: "group"
-    },
-    {
-        id: "66",
-        home_team_name_en: "Uruguay",
-        away_team_name_en: "Spain",
-        home_score: "0",
-        away_score: "0",
-        home_scorers: "null",
-        away_scorers: "null",
-        group: "H",
-        matchday: "3",
-        local_date: "06/26/2026 18:00",
-        stadium_id: "2",
-        finished: "FALSE",
-        time_elapsed: "notstarted",
-        type: "group"
-    },
-    {
-        id: "65",
-        home_team_name_en: "Cape Verde",
-        away_team_name_en: "Saudi Arabia",
-        home_score: "0",
-        away_score: "0",
-        home_scorers: "null",
-        away_scorers: "null",
-        group: "H",
-        matchday: "3",
-        local_date: "06/26/2026 19:00",
-        stadium_id: "5",
-        finished: "FALSE",
-        time_elapsed: "notstarted",
-        type: "group"
-    },
-    {
-        id: "63",
-        home_team_name_en: "Egypt",
-        away_team_name_en: "Iran",
-        home_score: "0",
-        away_score: "0",
-        home_scorers: "null",
-        away_scorers: "null",
-        group: "G",
-        matchday: "3",
-        local_date: "06/26/2026 20:00",
-        stadium_id: "14",
-        finished: "FALSE",
-        time_elapsed: "notstarted",
-        type: "group"
-    },
-    {
-        id: "64",
-        home_team_name_en: "New Zealand",
-        away_team_name_en: "Belgium",
-        home_score: "0",
-        away_score: "0",
-        home_scorers: "null",
-        away_scorers: "null",
-        group: "G",
-        matchday: "3",
-        local_date: "06/26/2026 20:00",
-        stadium_id: "13",
-        finished: "FALSE",
-        time_elapsed: "notstarted",
-        type: "group"
-    }
-];
-
 export const getWcTeamFlagHTML = (teamName, className = "") => {
     const localTeam = getTeamData(teamName);
     if (localTeam && localTeam.code) {
@@ -341,44 +244,85 @@ export const getWcTeamFlagHTML = (teamName, className = "") => {
     return `<span class="flag-placeholder">🏳️</span>`;
 };
 
-const fetchWorldCupGames = async () => {
-    const API_URL = "https://worldcup26.ir/get/games";
-    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(API_URL)}`;
-
+const fetchMatchesList = async () => {
     try {
-        console.log("Fetching World Cup matches from API...");
-        const res = await fetch(API_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        dataFeedError = null;
+        console.log("Fetching matches list from Vercel proxy...");
+        const res = await fetch("/api/matches");
+        if (!res.ok) {
+            throw new Error(`HTTP Error ${res.status}`);
+        }
         const data = await res.json();
-        if (data && Array.isArray(data.games)) {
+        
+        if (data && Array.isArray(data.matches)) {
+            currentLiveMatches = data.matches;
+            worldCupGames = data.matches;
+            console.log(`Successfully fetched ${currentLiveMatches.length} matches from proxy.`);
+        } else if (data && Array.isArray(data.games)) {
+            currentLiveMatches = data.games;
             worldCupGames = data.games;
-            console.log(`Fetched ${worldCupGames.length} games from API.`);
-            return;
+        } else {
+            throw new Error("Invalid response format from matches proxy");
         }
-        throw new Error("Invalid API response format");
     } catch (err) {
-        console.warn("Direct API fetch failed, trying proxy...", err.message);
-        try {
-            const res = await fetch(PROXY_URL);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const wrapper = await res.json();
-            const data = JSON.parse(wrapper.contents);
-            if (data && Array.isArray(data.games)) {
-                worldCupGames = data.games;
-                console.log(`Fetched ${worldCupGames.length} games via proxy.`);
-                return;
-            }
-        } catch (proxyErr) {
-            console.error("CORS proxy fetch failed. Using offline fallback matches.", proxyErr.message);
-            worldCupGames = FALLBACK_WORLD_CUP_GAMES;
+        console.error("Failed to fetch matches list:", err.message);
+        dataFeedError = "Data Feed Temporarily Unavailable";
+        showDataFeedErrorBanner(dataFeedError);
+    }
+};
+
+const fetchMatchDetails = async (matchId) => {
+    try {
+        dataFeedError = null;
+        console.log(`Fetching match details for ID ${matchId} from Vercel proxy...`);
+        const res = await fetch(`/api/matches?matchId=${matchId}`);
+        if (!res.ok) {
+            throw new Error(`HTTP Error ${res.status}`);
         }
+        const data = await res.json();
+        currentSelectedMatchDetails = data;
+        console.log(`Successfully fetched details for match ID ${matchId}.`);
+        return data;
+    } catch (err) {
+        console.error(`Failed to fetch details for match ID ${matchId}:`, err.message);
+        dataFeedError = "Data Feed Temporarily Unavailable";
+        showDataFeedErrorBanner(dataFeedError);
+        return null;
+    }
+};
+
+const showDataFeedErrorBanner = (message) => {
+    const errorBanner = document.getElementById("data-feed-error-banner");
+    if (errorBanner) {
+        errorBanner.textContent = message;
+        errorBanner.style.display = "block";
+    } else {
+        const banner = document.createElement("div");
+        banner.id = "data-feed-error-banner";
+        banner.className = "calendar-toast-alert data-feed-error";
+        banner.style.background = "#ef4444";
+        banner.style.color = "#ffffff";
+        banner.style.position = "fixed";
+        banner.style.bottom = "20px";
+        banner.style.right = "20px";
+        banner.style.padding = "12px 20px";
+        banner.style.borderRadius = "8px";
+        banner.style.fontSize = "12px";
+        banner.style.fontWeight = "bold";
+        banner.style.zIndex = "30000";
+        banner.textContent = message;
+        document.body.appendChild(banner);
+        
+        setTimeout(() => {
+            banner.remove();
+        }, 3000);
     }
 };
 
 export const activateLiveArena = async () => {
     deactivateLiveArena();
 
-    await fetchWorldCupGames();
+    await fetchMatchesList();
     renderLiveMatches();
     updateLiveStandings();
 
@@ -388,71 +332,18 @@ export const activateLiveArena = async () => {
         selectLiveMatch(liveGame);
     }
 
-    apiPollInterval = setInterval(async () => {
-        const oldSelectedId = selectedLiveMatchId;
-        await fetchWorldCupGames();
+    // Strict poll interval once every 60000ms
+    matchesListInterval = setInterval(async () => {
+        await fetchMatchesList();
         renderLiveMatches();
         updateLiveStandings();
-        
-        if (oldSelectedId) {
-            const updatedGame = worldCupGames.find(g => g.id === oldSelectedId);
-            if (updatedGame && selectedLiveMatchId === oldSelectedId) {
-                const state = liveStates[oldSelectedId];
-                if (state) {
-                    const newApiScoreHome = parseInt(updatedGame.home_score) || 0;
-                    const newApiScoreAway = parseInt(updatedGame.away_score) || 0;
-                    const newApiFinished = updatedGame.finished === "TRUE";
-                    
-                    if (newApiScoreHome !== state.lastApiScoreHome ||
-                        newApiScoreAway !== state.lastApiScoreAway ||
-                        newApiFinished !== state.lastApiFinished) {
-                        
-                        if (newApiScoreHome > state.lastApiScoreHome) {
-                            const newGoals = parseList(updatedGame.home_scorers);
-                            const latestGoal = newGoals[newGoals.length - 1] || `${updatedGame.home_team_name_en} Goal`;
-                            state.timeline.push({
-                                min: state.minute,
-                                icon: "⚽",
-                                desc: `<strong>GOAL!</strong> <strong>${latestGoal}</strong> scores for <strong>${updatedGame.home_team_name_en}</strong>!`
-                            });
-                        }
-                        if (newApiScoreAway > state.lastApiScoreAway) {
-                            const newGoals = parseList(updatedGame.away_scorers);
-                            const latestGoal = newGoals[newGoals.length - 1] || `${updatedGame.away_team_name_en} Goal`;
-                            state.timeline.push({
-                                min: state.minute,
-                                icon: "⚽",
-                                desc: `<strong>GOAL!</strong> <strong>${latestGoal}</strong> scores for <strong>${updatedGame.away_team_name_en}</strong>!`
-                            });
-                        }
-                        
-                        state.scoreHome = newApiScoreHome;
-                        state.scoreAway = newApiScoreAway;
-                        state.finished = newApiFinished;
-
-                        state.lastApiScoreHome = newApiScoreHome;
-                        state.lastApiScoreAway = newApiScoreAway;
-                        state.lastApiFinished = newApiFinished;
-                    }
-                }
-                updateConsoleDetails(updatedGame);
-            }
-        }
-    }, 30000);
-
-    liveMatchInterval = setInterval(() => {
-        tickLiveMatchesSimulation();
-    }, 1000);
+    }, 60000);
 };
 
 export const deactivateLiveArena = () => {
-    if (apiPollInterval) {
-        clearInterval(apiPollInterval);
-        apiPollInterval = null;
-    }
-    if (liveMatchInterval) {
-        clearInterval(liveMatchInterval);
-        liveMatchInterval = null;
+    if (matchesListInterval) {
+        clearInterval(matchesListInterval);
+        matchesListInterval = null;
     }
 };
 
@@ -460,39 +351,47 @@ const getTodayMatches = () => {
     if (!worldCupGames || worldCupGames.length === 0) return [];
 
     const now = new Date();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const yyyy = now.getFullYear();
-    const todayStr = `${mm}/${dd}/${yyyy}`;
+    const todayStartOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const matchesToday = worldCupGames.filter(game => game.local_date && game.local_date.startsWith(todayStr));
+    const parseDate = (game) => {
+        if (game.utcDate) return new Date(game.utcDate);
+        if (game.local_date) {
+            const [datePart, timePart] = game.local_date.split(' ');
+            const [m, d, y] = datePart.split('/').map(Number);
+            const [hr, min] = (timePart || '00:00').split(':').map(Number);
+            return new Date(y, m - 1, d, hr, min);
+        }
+        return new Date(0);
+    };
+
+    const getDateString = (date) => {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const todayStr = getDateString(now);
+    const matchesToday = worldCupGames.filter(game => {
+        const gameDate = parseDate(game);
+        return getDateString(gameDate) === todayStr;
+    });
+
     if (matchesToday.length > 0) {
         return matchesToday;
     }
 
-    const parseGameDate = (dateStr) => {
-        if (!dateStr) return new Date(0);
-        const [datePart, timePart] = dateStr.split(' ');
-        const [m, d, y] = datePart.split('/').map(Number);
-        const [hr, min] = (timePart || '00:00').split(':').map(Number);
-        return new Date(y, m - 1, d, hr, min);
-    };
-
-    const todayStartOfDay = new Date(yyyy, now.getMonth(), now.getDate());
     const upcomingGames = worldCupGames.filter(game => {
-        const gameDate = parseGameDate(game.local_date);
+        const gameDate = parseDate(game);
         return gameDate >= todayStartOfDay;
     });
 
     if (upcomingGames.length > 0) {
-        upcomingGames.sort((a, b) => parseGameDate(a.local_date) - parseGameDate(b.local_date));
-        const earliestUpcomingDateStr = upcomingGames[0].local_date.split(' ')[0];
-        return worldCupGames.filter(game => game.local_date && game.local_date.startsWith(earliestUpcomingDateStr));
+        upcomingGames.sort((a, b) => parseDate(a) - parseDate(b));
+        const earliestUpcomingDateStr = getDateString(parseDate(upcomingGames[0]));
+        return worldCupGames.filter(game => getDateString(parseDate(game)) === earliestUpcomingDateStr);
     }
 
-    const sortedGames = [...worldCupGames].sort((a, b) => parseGameDate(a.local_date) - parseGameDate(b.local_date));
-    const latestDateStr = sortedGames[sortedGames.length - 1].local_date.split(' ')[0];
-    return worldCupGames.filter(game => game.local_date && game.local_date.startsWith(latestDateStr));
+    const sortedGames = [...worldCupGames].sort((a, b) => parseDate(a) - parseDate(b));
+    const latestDateStr = getDateString(parseDate(sortedGames[sortedGames.length - 1]));
+    return worldCupGames.filter(game => getDateString(parseDate(game)) === latestDateStr);
 };
 
 export const renderLiveMatches = () => {
@@ -509,10 +408,15 @@ export const renderLiveMatches = () => {
 
     const todayMatches = getTodayMatches();
     let matchDateStr = "";
-    if (todayMatches[0] && todayMatches[0].local_date) {
-        const ist = formatToIST(todayMatches[0].local_date, todayMatches[0].stadium_id, todayMatches[0].id);
-        matchDateStr = ist.dateFull;
+    if (todayMatches[0]) {
+        if (todayMatches[0].utcDate) {
+            matchDateStr = new Date(todayMatches[0].utcDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        } else if (todayMatches[0].local_date) {
+            const ist = formatToIST(todayMatches[0].local_date, todayMatches[0].stadium_id, todayMatches[0].id);
+            matchDateStr = ist.dateFull;
+        }
     }
+    
     const priorityTitle = document.querySelector(".prioritized-card .card-section-title");
     const generalTitle = document.querySelector(".general-matches-card .card-section-title");
     if (matchDateStr) {
@@ -527,8 +431,8 @@ export const renderLiveMatches = () => {
     let generalCount = 0;
 
     todayMatches.forEach(game => {
-        const hName = game.home_team_name_en;
-        const aName = game.away_team_name_en;
+        const hName = game.homeTeam?.name || game.home_team_name_en || "TBD";
+        const aName = game.awayTeam?.name || game.away_team_name_en || "TBD";
 
         const isPriority = (selectedT1 && (hName === selectedT1 || aName === selectedT1)) ||
                            (selectedT2 && (hName === selectedT2 || aName === selectedT2));
@@ -540,29 +444,25 @@ export const renderLiveMatches = () => {
         }
 
         if (!liveStates[game.id]) {
-            const isLive = game.finished === "FALSE" && game.time_elapsed !== "notstarted";
+            const isLive = game.status === "IN_PLAY" || game.status === "PAUSED" || (game.finished === "FALSE" && game.time_elapsed !== "notstarted");
+            const isFinished = game.status === "FINISHED" || game.finished === "TRUE";
             let initialMin = 0;
             if (isLive) {
                 const parsed = parseInt(game.time_elapsed);
                 initialMin = isNaN(parsed) ? 40 : parsed;
-            } else if (game.finished === "TRUE") {
+            } else if (isFinished) {
                 initialMin = 90;
             }
-            const initialScoreHome = parseInt(game.home_score) || 0;
-            const initialScoreAway = parseInt(game.away_score) || 0;
-            const initialFinished = game.finished === "TRUE";
+            
+            const initialScoreHome = game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined ? game.score.fullTime.home : (parseInt(game.home_score) || 0);
+            const initialScoreAway = game.score?.fullTime?.away !== null && game.score?.fullTime?.away !== undefined ? game.score.fullTime.away : (parseInt(game.away_score) || 0);
 
             const state = {
                 minute: initialMin,
                 scoreHome: initialScoreHome,
                 scoreAway: initialScoreAway,
-                finished: initialFinished,
-                lastApiScoreHome: initialScoreHome,
-                lastApiScoreAway: initialScoreAway,
-                lastApiMinute: initialMin,
-                lastApiFinished: initialFinished,
+                finished: isFinished,
                 loadedAt: Date.now(),
-                initialMinute: initialMin,
                 stats: {
                     possession: 50,
                     shotsHome: 0,
@@ -578,29 +478,42 @@ export const renderLiveMatches = () => {
                 },
                 timeline: []
             };
-
-            // Pre-populate history if match is live or finished
-            if (isLive || initialFinished) {
-                initializeMatchHistory(game, state);
-            }
-
             liveStates[game.id] = state;
         }
 
         const state = liveStates[game.id];
 
-        let statusText = "Upcoming";
-        let statusClass = "status-upcoming";
-        if (state.finished) {
-            statusText = "Finished";
-            statusClass = "status-finished";
-        } else if (game.finished === "FALSE" && game.time_elapsed !== "notstarted") {
-            statusText = `Live - ${state.minute}'`;
-            statusClass = "status-live";
+        let scoreText = "vs";
+        if (game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined) {
+            scoreText = `${game.score.fullTime.home} - ${game.score.fullTime.away}`;
+        } else if (state && state.scoreHome !== undefined) {
+            scoreText = `${state.scoreHome} - ${state.scoreAway}`;
         }
 
-        const istTime = formatToIST(game.local_date, game.stadium_id, game.id);
-        const matchTime = istTime.time;
+        let statusText = "Upcoming";
+        let statusClass = "status-upcoming";
+        
+        const status = game.status;
+        if (status === "FINISHED") {
+            statusText = "Finished";
+            statusClass = "status-finished";
+        } else if (status === "IN_PLAY" || status === "PAUSED") {
+            statusText = status === "PAUSED" ? "HT" : "Live";
+            statusClass = "status-live";
+        } else if (state && state.finished) {
+            statusText = "Finished";
+            statusClass = "status-finished";
+        }
+
+        let matchTime = "";
+        if (game.utcDate) {
+            matchTime = new Date(game.utcDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (game.local_date) {
+            const istTime = formatToIST(game.local_date, game.stadium_id, game.id);
+            matchTime = istTime.time;
+        }
+
+        const groupLabel = game.group ? game.group.replace("GROUP_", "Group ") : "";
 
         card.innerHTML = `
             <div class="m-card-teams">
@@ -614,8 +527,8 @@ export const renderLiveMatches = () => {
                 </div>
             </div>
             <div class="m-card-score-box">
-                <span class="m-card-score">${state.scoreHome} - ${state.scoreAway}</span>
-                <span class="m-card-meta">${game.group} • ${matchTime}</span>
+                <span class="m-card-score">${scoreText}</span>
+                <span class="m-card-meta">${groupLabel} • ${matchTime}</span>
             </div>
             <span class="m-card-status-pill ${statusClass}">
                 ${statusText}
@@ -645,161 +558,22 @@ export const renderLiveMatches = () => {
     }
 };
 
-export const selectLiveMatch = (game) => {
+export const selectLiveMatch = async (game) => {
     selectedLiveMatchId = game.id;
     document.getElementById("console-empty-state")?.classList.add("hidden");
     document.getElementById("console-active-state")?.classList.remove("hidden");
     
-    // Reset active tab navigation to "stats"
     document.querySelectorAll(".console-tab-btn").forEach(b => {
         if (b.dataset.tab === "stats") b.classList.add("active");
         else b.classList.remove("active");
     });
     
+    await fetchMatchDetails(game.id);
     updateConsoleDetails(game);
     updateLiveStandings();
 };
 
-const initializeMatchHistory = (game, state) => {
-    const t1 = game.home_team_name_en;
-    const t2 = game.away_team_name_en;
-    const scoreHome = parseInt(game.home_score) || 0;
-    const scoreAway = parseInt(game.away_score) || 0;
-    const currentMin = state.minute;
-
-    const goals = [];
-    try {
-        if (game.home_scorers && game.home_scorers !== "null") {
-            const array = game.home_scorers.startsWith("{") ? JSON.parse(game.home_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.home_scorers];
-            array.forEach(s => {
-                const m = s.match(/(.+)\s+(\d+)'/);
-                if (m) goals.push({ min: parseInt(m[2]), team: 'home', desc: `<strong>GOAL!</strong> <strong>${m[1]}</strong> scores for <strong>${t1}</strong>!`, icon: "⚽" });
-            });
-        }
-        if (game.away_scorers && game.away_scorers !== "null") {
-            const array = game.away_scorers.startsWith("{") ? JSON.parse(game.away_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.away_scorers];
-            array.forEach(s => {
-                const m = s.match(/(.+)\s+(\d+)'/);
-                if (m) goals.push({ min: parseInt(m[2]), team: 'away', desc: `<strong>GOAL!</strong> <strong>${m[1]}</strong> scores for <strong>${t2}</strong>!`, icon: "⚽" });
-            });
-        }
-    } catch (e) {
-        // Fallback
-    }
-
-    // Procedurally add goals if score mismatch
-    while (goals.filter(g => g.team === 'home').length < scoreHome) {
-        const min = Math.max(5, Math.floor(Math.random() * (currentMin - 5)));
-        goals.push({ min, team: 'home', desc: `<strong>GOAL!</strong> <strong>${t1}</strong> scores!`, icon: "⚽" });
-    }
-    while (goals.filter(g => g.team === 'away').length < scoreAway) {
-        const min = Math.max(5, Math.floor(Math.random() * (currentMin - 5)));
-        goals.push({ min, team: 'away', desc: `<strong>GOAL!</strong> <strong>${t2}</strong> scores!`, icon: "⚽" });
-    }
-
-    goals.sort((a, b) => a.min - b.min);
-
-    const stats = {
-        possession: 50 + (Math.floor(Math.random() * 11) - 5), // 45 to 55
-        shotsHome: 0,
-        shotsAway: 0,
-        shotsOnTargetHome: 0,
-        shotsOnTargetAway: 0,
-        foulsHome: 0,
-        foulsAway: 0,
-        savesHome: 0,
-        savesAway: 0,
-        cornersHome: 0,
-        cornersAway: 0
-    };
-
-    const timeline = [{
-        min: 0,
-        icon: "🚩",
-        desc: `Kickoff at <strong>${getStadiumName(game.stadium_id)}</strong> under the night floodlights!`
-    }];
-
-    // Generate random match events prior to currentMin
-    for (let m = 5; m < currentMin; m += (Math.floor(Math.random() * 8) + 6)) {
-        // Goal nearby?
-        const goalHere = goals.find(g => g.min >= m && g.min < m + 8);
-        if (goalHere) {
-            timeline.push(goalHere);
-            if (goalHere.team === 'home') {
-                stats.shotsHome++;
-                stats.shotsOnTargetHome++;
-            } else {
-                stats.shotsAway++;
-                stats.shotsOnTargetAway++;
-            }
-            m = goalHere.min;
-            continue;
-        }
-
-        const r = Math.random();
-        if (r < 0.25) {
-            // Shot saved or missed
-            const sideHome = Math.random() < 0.5;
-            const isSave = Math.random() < 0.5;
-            if (sideHome) {
-                stats.shotsHome++;
-                if (isSave) {
-                    stats.shotsOnTargetHome++;
-                    stats.savesAway++;
-                    timeline.push({ min: m, icon: "🧤", desc: `Great save by the <strong>${t2}</strong> goalkeeper to parry a close effort!` });
-                } else {
-                    timeline.push({ min: m, icon: "💨", desc: `A powerful volley from <strong>${t1}</strong> sails wide of the post.` });
-                }
-            } else {
-                stats.shotsAway++;
-                if (isSave) {
-                    stats.shotsOnTargetAway++;
-                    stats.savesHome++;
-                    timeline.push({ min: m, icon: "🧤", desc: `Reflex save by the <strong>${t1}</strong> keeper prevents a goal!` });
-                } else {
-                    timeline.push({ min: m, icon: "💨", desc: `A header from <strong>${t2}</strong> curls over the crossbar.` });
-                }
-            }
-        } else if (r < 0.5) {
-            // Foul/card
-            const sideHome = Math.random() < 0.5;
-            const isCard = Math.random() < 0.3;
-            if (sideHome) {
-                stats.foulsHome++;
-                if (isCard) {
-                    timeline.push({ min: m, icon: "🟨", desc: `Yellow card issued to defensive midfielder of <strong>${t1}</strong> for a slide tackle.` });
-                }
-            } else {
-                stats.foulsAway++;
-                if (isCard) {
-                    timeline.push({ min: m, icon: "🟨", desc: `Referee books the center-back of <strong>${t2}</strong> for dragging down the forward.` });
-                }
-            }
-        } else if (r < 0.75) {
-            // Corner
-            const sideHome = Math.random() < 0.5;
-            if (sideHome) {
-                stats.cornersHome++;
-                timeline.push({ min: m, icon: "🎯", desc: `Corner awarded to <strong>${t1}</strong> after a deflected cross.` });
-            } else {
-                stats.cornersAway++;
-                timeline.push({ min: m, icon: "🎯", desc: `Corner kick for <strong>${t2}</strong>. Defender heads it behind.` });
-            }
-        }
-    }
-
-    // Ensure all goals are in timeline
-    goals.forEach(g => {
-        if (!timeline.some(evt => evt.min === g.min && evt.icon === "⚽")) {
-            timeline.push(g);
-        }
-    });
-
-    timeline.sort((a, b) => a.min - b.min);
-    state.stats = stats;
-    state.timeline = timeline;
-    state.renderedEventsCount = timeline.length;
-};
+// initializeMatchHistory removed during Segment 1 match engine overhaul
 
 const drawPreMatchHub = (game) => {
     const hub = document.getElementById("console-prematch-hub");
@@ -1054,76 +828,14 @@ const drawPreMatchHub = (game) => {
     `;
 };
 
-const fetchSofaScoreLineups = async (hName, aName) => {
-    let cleanH = hName.replace("Ivory Coast", "Cote d'Ivoire");
-    let cleanA = aName.replace("Ivory Coast", "Cote d'Ivoire");
-    
-    const searchUrl = `https://api.sofascore.com/api/v1/search/all?q=${encodeURIComponent(cleanH + ' ' + cleanA)}&page=0`;
-    const proxySearchUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`;
-    
-    try {
-        let searchData;
-        try {
-            const res = await fetch(searchUrl);
-            searchData = await res.json();
-        } catch(e) {
-            const res = await fetch(proxySearchUrl);
-            const wrapper = await res.json();
-            searchData = JSON.parse(wrapper.contents);
-        }
-        
-        if (!searchData || !searchData.results) return null;
-        const firstEvent = searchData.results.find(r => r.type === "event" && r.entity);
-        if (!firstEvent) return null;
-        
-        const eventId = firstEvent.entity.id;
-        const lineupsUrl = `https://api.sofascore.com/api/v1/event/${eventId}/lineups`;
-        const proxyLineupsUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(lineupsUrl)}`;
-        
-        let lineupsData;
-        try {
-            const res = await fetch(lineupsUrl);
-            lineupsData = await res.json();
-        } catch(e) {
-            const res = await fetch(proxyLineupsUrl);
-            const wrapper = await res.json();
-            lineupsData = JSON.parse(wrapper.contents);
-        }
-        
-        return lineupsData;
-    } catch (err) {
-        console.warn("Failed to fetch SofaScore lineups:", err);
-        return null;
-    }
-};
 
-const getSofaScoreStartingXI = (lineupsData, isAway) => {
-    const side = isAway ? lineupsData.away : lineupsData.home;
-    if (!side || !side.players) return [];
-    
-    const starters = side.players.filter(p => !p.substitute);
-    
-    return starters.map(p => {
-        let mappedPos = "MID";
-        if (p.position === "G") mappedPos = "GK";
-        else if (p.position === "D") mappedPos = "DEF";
-        else if (p.position === "M") mappedPos = "MID";
-        else if (p.position === "F") mappedPos = "FWD";
-        
-        return {
-            name: p.player.name,
-            pos: mappedPos,
-            shirt: p.jerseyNumber || 99
-        };
-    });
-};
 
 const drawLineupPitch = (game, selectedTeamName) => {
     const flagsContainer = document.getElementById("lineups-team-flags");
     if (!flagsContainer) return;
 
-    const t1 = game.home_team_name_en;
-    const t2 = game.away_team_name_en;
+    const t1 = game.homeTeam?.name || game.home_team_name_en || "TBD";
+    const t2 = game.awayTeam?.name || game.away_team_name_en || "TBD";
     const isAwaySelected = (selectedTeamName === t2);
 
     flagsContainer.innerHTML = `
@@ -1146,28 +858,50 @@ const drawLineupPitch = (game, selectedTeamName) => {
     });
 
     const activeTeamObj = getTeamData(selectedTeamName);
-    
-    let startingXI = [];
-    const cached = lineupsCache[game.id];
-    if (cached) {
-        startingXI = getSofaScoreStartingXI(cached, isAwaySelected);
-    }
+    const titleEl = document.getElementById("lineups-active-team-title");
+    const subEl = document.getElementById("lineups-active-team-sub");
+    const jerseysContainer = document.getElementById("lineups-jerseys-container");
 
-    if (startingXI.length === 0) {
-        startingXI = getStartingXI(selectedTeamName);
+    // Finished matches with API lineup data: generate text-based list view
+    const matchStatus = currentSelectedMatchDetails?.status || game.status;
+    const hLineup = currentSelectedMatchDetails?.homeTeam?.lineup;
+    const aLineup = currentSelectedMatchDetails?.awayTeam?.lineup;
+    const hForm = currentSelectedMatchDetails?.homeTeam?.formation;
+    const aForm = currentSelectedMatchDetails?.awayTeam?.formation;
 
-        if (cached === undefined) {
-            lineupsCache[game.id] = null;
-            fetchSofaScoreLineups(t1, t2).then(data => {
-                if (data) {
-                    lineupsCache[game.id] = data;
-                    if (selectedLiveMatchId === game.id) {
-                        drawLineupPitch(game, selectedTeamName);
-                    }
-                }
+    if (matchStatus === "FINISHED" && hLineup && aLineup) {
+        const selectedLineup = isAwaySelected ? aLineup : hLineup;
+        const selectedFormation = isAwaySelected ? aForm : hForm;
+        
+        if (titleEl) titleEl.textContent = `${selectedTeamName} Starting XI`;
+        if (subEl) subEl.innerHTML = `Formation: <strong>${selectedFormation || "N/A"}</strong> | Finished Match Feed`;
+        
+        if (jerseysContainer) {
+            let listHTML = `<div class="finished-lineup-list" style="padding: 16px; color: var(--text-light); width: 100%; box-sizing: border-box; overflow-y: auto; height: 100%;">`;
+            listHTML += `<ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">`;
+            
+            selectedLineup.forEach(player => {
+                const shirt = player.shirtNumber || player.shirt || "-";
+                const name = player.name || "Player";
+                const pos = player.position || player.pos || "-";
+                listHTML += `
+                    <li style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                          <span style="font-weight: 900; color: #10b981; min-width: 24px;">#${shirt}</span>
+                          <span>${name}</span>
+                        </div>
+                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${pos}</span>
+                    </li>
+                `;
             });
+            listHTML += `</ul></div>`;
+            jerseysContainer.innerHTML = listHTML;
         }
+        return;
     }
+
+    // Default visual lineups pitch fallback
+    const startingXI = getStartingXI(selectedTeamName);
 
     const gkList = startingXI.filter(p => p.pos === "GK");
     const defList = startingXI.filter(p => p.pos === "DEF");
@@ -1176,12 +910,9 @@ const drawLineupPitch = (game, selectedTeamName) => {
 
     const formationText = `${defList.length}-${midList.length}-${fwdList.length}`;
     
-    const titleEl = document.getElementById("lineups-active-team-title");
-    const subEl = document.getElementById("lineups-active-team-sub");
     if (titleEl) titleEl.textContent = `${selectedTeamName} Lineup`;
     if (subEl) subEl.innerHTML = `Formation: ${formationText} | Coach: ${activeTeamObj.coach}`;
 
-    const jerseysContainer = document.getElementById("lineups-jerseys-container");
     if (!jerseysContainer) return;
     jerseysContainer.innerHTML = "";
 
@@ -1253,7 +984,7 @@ const updateConsoleDetails = (game) => {
     const state = liveStates[game.id];
     if (!state) return;
 
-    const isUpcoming = (game.finished === "FALSE" && game.time_elapsed === "notstarted");
+    const isUpcoming = (game.status === "TIMED" || game.status === "SCHEDULED" || (game.finished === "FALSE" && game.time_elapsed === "notstarted"));
     const navTabs = document.getElementById("console-tabs-nav");
     const prematchHub = document.getElementById("console-prematch-hub");
 
@@ -1298,8 +1029,9 @@ const updateConsoleDetails = (game) => {
             });
         }
 
-        // Draw lineups pitch initially for the home team
-        drawLineupPitch(game, game.home_team_name_en);
+        // Draw lineups pitch initially
+        const hName = game.homeTeam?.name || game.home_team_name_en || "TBD";
+        drawLineupPitch(game, hName);
     }
 
     const stadiumEl = document.getElementById("console-stadium-name");
@@ -1311,25 +1043,51 @@ const updateConsoleDetails = (game) => {
     const hScoreEl = document.getElementById("console-home-score");
     const aScoreEl = document.getElementById("console-away-score");
 
-    if (stadiumEl) stadiumEl.textContent = getStadiumName(game.stadium_id);
-    if (groupEl) groupEl.textContent = `Group ${game.group}`;
+    // Render Venue and Referee
+    if (stadiumEl) {
+        const venueStr = currentSelectedMatchDetails?.venue || getStadiumName(game.stadium_id);
+        const referees = currentSelectedMatchDetails?.referees || [];
+        const mainReferee = referees.find(r => r.role === "REFEREE")?.name || referees[0]?.name || "";
+        stadiumEl.textContent = mainReferee ? `${venueStr} (Ref: ${mainReferee})` : venueStr;
+    }
 
-    if (hFlagEl) hFlagEl.innerHTML = getWcTeamFlagHTML(game.home_team_name_en, "console-flag");
-    if (hNameEl) hNameEl.textContent = game.home_team_name_en;
-    if (aFlagEl) aFlagEl.innerHTML = getWcTeamFlagHTML(game.away_team_name_en, "console-flag");
-    if (aNameEl) aNameEl.textContent = game.away_team_name_en;
+    // Render Group and UTC kickoff date formatted to user local time
+    if (groupEl) {
+        const groupText = game.group ? `Group ${game.group.replace("GROUP_", "")}` : "";
+        let dateText = "";
+        const targetUtc = currentSelectedMatchDetails?.utcDate || game.utcDate;
+        if (targetUtc) {
+            dateText = ` | Kickoff: ${new Date(targetUtc).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`;
+        }
+        groupEl.textContent = `${groupText}${dateText}`;
+    }
 
-    if (hScoreEl) hScoreEl.textContent = state.scoreHome;
-    if (aScoreEl) aScoreEl.textContent = state.scoreAway;
+    const homeTeamDisplayName = game.homeTeam?.name || game.home_team_name_en || "TBD";
+    const awayTeamDisplayName = game.awayTeam?.name || game.away_team_name_en || "TBD";
+
+    if (hFlagEl) hFlagEl.innerHTML = getWcTeamFlagHTML(homeTeamDisplayName, "console-flag");
+    if (hNameEl) hNameEl.textContent = homeTeamDisplayName;
+    if (aFlagEl) aFlagEl.innerHTML = getWcTeamFlagHTML(awayTeamDisplayName, "console-flag");
+    if (aNameEl) aNameEl.textContent = awayTeamDisplayName;
+
+    // Scores display
+    const apiHomeScore = currentSelectedMatchDetails?.score?.fullTime?.home;
+    const apiAwayScore = currentSelectedMatchDetails?.score?.fullTime?.away;
+    const displayHomeScore = apiHomeScore !== null && apiHomeScore !== undefined ? apiHomeScore : (state ? state.scoreHome : "-");
+    const displayAwayScore = apiAwayScore !== null && apiAwayScore !== undefined ? apiAwayScore : (state ? state.scoreAway : "-");
+
+    if (hScoreEl) hScoreEl.textContent = displayHomeScore;
+    if (aScoreEl) aScoreEl.textContent = displayAwayScore;
 
     const timeEl = document.getElementById("console-time");
     if (timeEl) {
         timeEl.className = "console-time-elapsed";
-        if (state.finished) {
+        const status = currentSelectedMatchDetails?.status || game.status;
+        if (status === "FINISHED") {
             timeEl.textContent = "Finished";
             timeEl.classList.add("status-finished");
-        } else if (game.finished === "FALSE" && game.time_elapsed !== "notstarted") {
-            timeEl.textContent = `Live - ${state.minute}'`;
+        } else if (status === "IN_PLAY" || status === "PAUSED") {
+            timeEl.textContent = status === "PAUSED" ? "HT" : "Live";
             timeEl.classList.add("status-live");
         } else {
             timeEl.textContent = "Upcoming";
@@ -1337,37 +1095,42 @@ const updateConsoleDetails = (game) => {
         }
     }
 
+    // Goal Scorers List
     const homeScorersList = document.getElementById("console-home-scorers");
     const awayScorersList = document.getElementById("console-away-scorers");
     if (homeScorersList) homeScorersList.innerHTML = "";
     if (awayScorersList) awayScorersList.innerHTML = "";
 
     try {
-        if (game.home_scorers && game.home_scorers !== "null") {
-            const array = game.home_scorers.startsWith("{") ? JSON.parse(game.home_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.home_scorers];
-            array.forEach(s => {
-                if (homeScorersList) homeScorersList.innerHTML += `<div>${s}</div>`;
+        const events = currentSelectedMatchDetails?.events || [];
+        const goalEvents = events.filter(e => e.type === "GOAL");
+        if (goalEvents.length > 0) {
+            goalEvents.forEach(evt => {
+                const scorerName = evt.player?.name || "Goal";
+                const min = evt.minute || "";
+                const isHome = evt.team?.id === currentSelectedMatchDetails?.homeTeam?.id;
+                const list = isHome ? homeScorersList : awayScorersList;
+                if (list) list.innerHTML += `<div>${scorerName} ${min}'</div>`;
             });
-        }
-        if (game.away_scorers && game.away_scorers !== "null") {
-            const array = game.away_scorers.startsWith("{") ? JSON.parse(game.away_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.away_scorers];
-            array.forEach(s => {
-                if (awayScorersList) awayScorersList.innerHTML += `<div>${s}</div>`;
-            });
+        } else {
+            if (game.home_scorers && game.home_scorers !== "null") {
+                const array = game.home_scorers.startsWith("{") ? JSON.parse(game.home_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.home_scorers];
+                array.forEach(s => {
+                    if (homeScorersList) homeScorersList.innerHTML += `<div>${s}</div>`;
+                });
+            }
+            if (game.away_scorers && game.away_scorers !== "null") {
+                const array = game.away_scorers.startsWith("{") ? JSON.parse(game.away_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.away_scorers];
+                array.forEach(s => {
+                    if (awayScorersList) awayScorersList.innerHTML += `<div>${s}</div>`;
+                });
+            }
         }
     } catch (e) {
-        if (homeScorersList) {
-            homeScorersList.textContent = (game.home_scorers && game.home_scorers !== "null") 
-                ? String(game.home_scorers).replace(/[{}"]/g, "") 
-                : "";
-        }
-        if (awayScorersList) {
-            awayScorersList.textContent = (game.away_scorers && game.away_scorers !== "null") 
-                ? String(game.away_scorers).replace(/[{}"]/g, "") 
-                : "";
-        }
+        console.warn("Error rendering scorers list:", e);
     }
 
+    // Stats Grid
     const statsGrid = document.getElementById("console-stats-grid");
     if (statsGrid) {
         statsGrid.innerHTML = "";
@@ -1398,155 +1161,72 @@ const updateConsoleDetails = (game) => {
             `;
         };
 
+        const homePossession = state.stats?.possession || 50;
+        const awayPossession = 100 - homePossession;
+
         statsGrid.innerHTML = `
-            ${buildConsoleStatBar("Possession", `${state.stats.possession}%`, `${100 - state.stats.possession}%`)}
-            ${buildConsoleStatBar("Shots", state.stats.shotsHome, state.stats.shotsAway)}
-            ${buildConsoleStatBar("Shots on Target", state.stats.shotsOnTargetHome, state.stats.shotsOnTargetAway)}
-            ${buildConsoleStatBar("Fouls", state.stats.foulsHome, state.stats.foulsAway)}
-            ${buildConsoleStatBar("Goalkeeper Saves", state.stats.savesHome, state.stats.savesAway)}
-            ${buildConsoleStatBar("Corners", state.stats.cornersHome, state.stats.cornersAway)}
+            ${buildConsoleStatBar("Possession", `${homePossession}%`, `${awayPossession}%`)}
+            ${buildConsoleStatBar("Shots", state.stats?.shotsHome || 0, state.stats?.shotsAway || 0)}
+            ${buildConsoleStatBar("Shots on Target", state.stats?.shotsOnTargetHome || 0, state.stats?.shotsOnTargetAway || 0)}
+            ${buildConsoleStatBar("Fouls", state.stats?.foulsHome || 0, state.stats?.foulsAway || 0)}
+            ${buildConsoleStatBar("Goalkeeper Saves", state.stats?.savesHome || 0, state.stats?.savesAway || 0)}
+            ${buildConsoleStatBar("Corners", state.stats?.cornersHome || 0, state.stats?.cornersAway || 0)}
         `;
     }
 
+    // Timeline Event Log
     const timelineLog = document.getElementById("console-timeline-log");
     if (timelineLog) {
-        // Clear if we switched active matches or the container is empty
-        if (timelineLog.children.length === 0 || state.lastRenderedMatchId !== selectedLiveMatchId) {
-            timelineLog.innerHTML = "";
-            state.renderedEventsCount = 0;
-            state.lastRenderedMatchId = selectedLiveMatchId;
-        }
+        timelineLog.innerHTML = "";
 
-        if (state.timeline.length === 0) {
-            state.timeline.push({
-                min: 0,
-                icon: "🚩",
-                desc: `Kickoff at <strong>${getStadiumName(game.stadium_id)}</strong> under the night floodlights!`
-            });
-        }
+        const events = currentSelectedMatchDetails?.events || [];
+        if (events.length > 0) {
+            // Sort events chronologically by minute
+            const sortedEvents = [...events].sort((a, b) => (a.minute || 0) - (b.minute || 0));
+            sortedEvents.forEach(evt => {
+                let icon = "❓";
+                const typeText = evt.type || "";
+                if (typeText.includes("GOAL")) icon = "⚽";
+                else if (typeText.includes("YELLOW")) icon = "🟨";
+                else if (typeText.includes("RED")) icon = "🟥";
+                else if (typeText.includes("SUBST")) icon = "🔄";
+                
+                const teamName = evt.team?.name || "";
+                const playerName = evt.player?.name || "Player";
+                const desc = `<strong>${typeText.replace(/_/g, " ")}</strong> - ${playerName} (${teamName})`;
 
-        const startIdx = state.renderedEventsCount || 0;
-        const newEvents = state.timeline.slice(startIdx);
-
-        if (newEvents.length > 0) {
-            newEvents.forEach(event => {
                 const evCard = document.createElement("div");
                 evCard.className = "timeline-event-card";
                 evCard.innerHTML = `
-                    <span class="t-event-time">${event.min}'</span>
-                    <span class="t-event-icon">${event.icon}</span>
-                    <span class="t-event-desc">${event.desc}</span>
+                    <span class="t-event-time">${evt.minute || 0}'</span>
+                    <span class="t-event-icon">${icon}</span>
+                    <span class="t-event-desc">${desc}</span>
                 `;
                 timelineLog.appendChild(evCard);
             });
-            state.renderedEventsCount = state.timeline.length;
             timelineLog.scrollTop = timelineLog.scrollHeight;
-        }
-    }
-};
-
-const tickLiveMatchesSimulation = () => {
-    const todayMatches = getTodayMatches();
-    let hasLiveUpdates = false;
-
-    todayMatches.forEach(game => {
-        const isLive = game.finished === "FALSE" && game.time_elapsed !== "notstarted";
-        if (!isLive) return;
-
-        const state = liveStates[game.id];
-        if (!state || state.finished) return;
-
-        // Realistic clock ticking (1 minute per 60 seconds of real-world time)
-        const elapsed = Math.floor((Date.now() - state.loadedAt) / 60000);
-        const currentMin = state.initialMinute + elapsed;
-        
-        if (currentMin !== state.minute) {
-            state.minute = Math.min(currentMin, 90);
-            hasLiveUpdates = true;
-            
-            if (state.minute >= 90 && game.finished === "TRUE") {
-                state.finished = true;
-                state.timeline.push({
-                    min: 90,
-                    icon: "🏁",
-                    desc: `<strong>Full Time!</strong> The referee blows the final whistle. The match ends.`
+        } else {
+            // Fallback to legacy simulated history array
+            if (state.timeline && state.timeline.length > 0) {
+                state.timeline.forEach(event => {
+                    const evCard = document.createElement("div");
+                    evCard.className = "timeline-event-card";
+                    evCard.innerHTML = `
+                        <span class="t-event-time">${event.min}'</span>
+                        <span class="t-event-icon">${event.icon}</span>
+                        <span class="t-event-desc">${event.desc}</span>
+                    `;
+                    timelineLog.appendChild(evCard);
                 });
-
-            }
-        }
-
-        // Generate occasional non-goal match events to keep the console active
-        if (Math.random() < 0.08) {
-            const r = Math.random();
-            const t1 = game.home_team_name_en;
-            const t2 = game.away_team_name_en;
-            
-            if (r < 0.3) {
-                const sideHome = Math.random() < 0.5;
-                const isSave = Math.random() < 0.5;
-                if (sideHome) {
-                    state.stats.shotsHome++;
-                    if (isSave) {
-                        state.stats.shotsOnTargetHome++;
-                        state.stats.savesAway++;
-                        state.timeline.push({ min: state.minute, icon: "🧤", desc: `Great save by the <strong>${t2}</strong> goalkeeper to parry a close effort!` });
-                    } else {
-                        state.timeline.push({ min: state.minute, icon: "💨", desc: `A powerful volley from <strong>${t1}</strong> sails wide of the post.` });
-                    }
-                } else {
-                    state.stats.shotsAway++;
-                    if (isSave) {
-                        state.stats.shotsOnTargetAway++;
-                        state.stats.savesHome++;
-                        state.timeline.push({ min: state.minute, icon: "🧤", desc: `Reflex save by the <strong>${t1}</strong> keeper prevents a goal!` });
-                    } else {
-                        state.timeline.push({ min: state.minute, icon: "💨", desc: `A header from <strong>${t2}</strong> curls over the crossbar.` });
-                    }
-                }
-                hasLiveUpdates = true;
-            } else if (r < 0.6) {
-                const sideHome = Math.random() < 0.5;
-                const isCard = Math.random() < 0.25;
-                if (sideHome) {
-                    state.stats.foulsHome++;
-                    if (isCard) {
-                        state.timeline.push({ min: state.minute, icon: "🟨", desc: `Yellow card issued to defensive midfielder of <strong>${t1}</strong> for a tactical slide tackle.` });
-
-                    } else {
-                        state.timeline.push({ min: state.minute, icon: "💥", desc: `Foul committed by <strong>${t1}</strong>. The referee awards a free-kick.` });
-                    }
-                } else {
-                    state.stats.foulsAway++;
-                    if (isCard) {
-                        state.timeline.push({ min: state.minute, icon: "🟨", desc: `Referee books the center-back of <strong>${t2}</strong> for dragging down the forward.` });
-
-                    } else {
-                        state.timeline.push({ min: state.minute, icon: "💥", desc: `Foul committed by <strong>${t2}</strong>. The referee awards a free-kick.` });
-                    }
-                }
-                hasLiveUpdates = true;
+                timelineLog.scrollTop = timelineLog.scrollHeight;
             } else {
-                const sideHome = Math.random() < 0.5;
-                if (sideHome) {
-                    state.stats.cornersHome++;
-                    state.timeline.push({ min: state.minute, icon: "🎯", desc: `Corner kick awarded to <strong>${t1}</strong> after a defender blocks the cross.` });
-                } else {
-                    state.stats.cornersAway++;
-                    state.timeline.push({ min: state.minute, icon: "🎯", desc: `Corner kick awarded to <strong>${t2}</strong>. Defender heads it behind.` });
-                }
-                hasLiveUpdates = true;
+                timelineLog.innerHTML = `<div class="timeline-empty" style="text-align: center; color: var(--text-muted); padding: 24px; font-size: 12px;">No match commentary available.</div>`;
             }
-        }
-    });
-
-    if (hasLiveUpdates) {
-        renderLiveMatches();
-        const activeGame = todayMatches.find(g => g.id === selectedLiveMatchId);
-        if (activeGame) {
-            updateConsoleDetails(activeGame);
         }
     }
 };
+
+// tickLiveMatchesSimulation removed during Segment 1 match engine overhaul
 
 const getStadiumName = (stadiumId) => {
     const stadiums = {
