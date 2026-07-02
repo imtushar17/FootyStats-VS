@@ -2194,7 +2194,7 @@ const renderKnockoutBracket = (container) => {
 
     const columnRounds = [
         { key: "r32", title: "Round of 32", className: "column-r32", ids: ["74", "77", "73", "75", "76", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88"] },
-        { key: "r16", title: "Round of 16", className: "column-r16", ids: ["89", "90", "91", "92", "93", "94", "95", "96"] },
+        { key: "r16", title: "Round of 16", className: "column-r16", ids: ["89", "90", "91", "92", "94", "93", "95", "96"] }, // Swapped 93 and 94 for visual alignment
         { key: "qf", title: "Quarter-finals", className: "column-qf", ids: ["97", "98", "99", "100"] },
         { key: "sf", title: "Semi-finals", className: "column-sf", ids: ["101", "102"] },
         { key: "final", title: "Finals", className: "column-final", ids: ["104"] } // Draw only 104 in standard list for centered connection lines
