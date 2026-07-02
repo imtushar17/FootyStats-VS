@@ -2168,8 +2168,8 @@ const getBracketPlaceholderName = (matchId, isAway) => {
         "90": ["W73", "W75"],
         "91": ["W76", "W78"],
         "92": ["W79", "W80"],
-        "93": ["W81", "W82"],
-        "94": ["W83", "W84"],
+        "93": ["W83", "W84"], // Corrected pairings
+        "94": ["W81", "W82"], // Corrected pairings
         "95": ["W85", "W86"],
         "96": ["W87", "W88"],
         "97": ["W89", "W90"],
@@ -2197,13 +2197,133 @@ const renderKnockoutBracket = (container) => {
         { key: "r16", title: "Round of 16", className: "column-r16", ids: ["89", "90", "91", "92", "93", "94", "95", "96"] },
         { key: "qf", title: "Quarter-finals", className: "column-qf", ids: ["97", "98", "99", "100"] },
         { key: "sf", title: "Semi-finals", className: "column-sf", ids: ["101", "102"] },
-        { key: "final", title: "Finals", className: "column-final", ids: ["104", "103"] }
+        { key: "final", title: "Finals", className: "column-final", ids: ["104"] } // Draw only 104 in standard list for centered connection lines
     ];
 
     const gamesMap = {};
     worldCupGames.forEach(g => {
         gamesMap[g.id] = g;
     });
+
+    const buildNode = (game, index, customClass = "") => {
+        const nodeClass = customClass || ((index % 2 === 0) ? "odd-node" : "even-node");
+        const hName = game.home_team_name_en;
+        const aName = game.away_team_name_en;
+
+        const hasHome = hName && hName !== "undefined" && hName !== "null";
+        const hasAway = aName && aName !== "undefined" && aName !== "null";
+        const isUnresolved = !hasHome || !hasAway;
+
+        const homeDisplayName = hasHome ? hName : getBracketPlaceholderName(game.id, false);
+        const awayDisplayName = hasAway ? aName : getBracketPlaceholderName(game.id, true);
+
+        let headerDate = "TBD";
+        let headerStatus = "Upcoming";
+        let statusClass = "";
+        let upcomingFooterHTML = "";
+
+        if (game.local_date) {
+            const istTime = formatToIST(game.local_date, game.stadium_id, game.id);
+            headerDate = istTime.date;
+            headerStatus = istTime.time;
+        }
+
+        const state = liveStates[game.id];
+        let scoreHome = "";
+        let scoreAway = "";
+        let isPlayed = false;
+        let isLive = false;
+
+        if (state) {
+            scoreHome = state.scoreHome;
+            scoreAway = state.scoreAway;
+            isPlayed = state.finished;
+            isLive = !state.finished && game.finished === "FALSE" && game.time_elapsed !== "notstarted";
+        } else {
+            scoreHome = game.finished === "TRUE" ? (parseInt(game.home_score) || 0) : "";
+            scoreAway = game.finished === "TRUE" ? (parseInt(game.away_score) || 0) : "";
+            isPlayed = game.finished === "TRUE";
+        }
+
+        if (isLive) {
+            headerStatus = `Live - ${state ? state.minute : game.time_elapsed}'`;
+            statusClass = "live-text";
+        } else if (isPlayed) {
+            headerStatus = "FT";
+        } else {
+            upcomingFooterHTML = `<div class="bracket-node-footer">Upcoming</div>`;
+        }
+
+        const hasPenalties = game.home_penalty_score !== undefined && 
+                             game.home_penalty_score !== null && 
+                             game.home_penalty_score !== "" && 
+                             game.home_penalty_score !== "null" &&
+                             game.away_penalty_score !== undefined &&
+                             game.away_penalty_score !== null &&
+                             game.away_penalty_score !== "" &&
+                             game.away_penalty_score !== "null";
+        const homeScoreText = isPlayed ? (hasPenalties ? `${scoreHome} (${game.home_penalty_score})` : scoreHome) : "";
+        const awayScoreText = isPlayed ? (hasPenalties ? `${scoreAway} (${game.away_penalty_score})` : scoreAway) : "";
+
+        let homeClass = "";
+        let awayClass = "";
+        if (isPlayed) {
+            const intHome = parseInt(scoreHome) || 0;
+            const intAway = parseInt(scoreAway) || 0;
+            if (intHome > intAway) {
+                homeClass = "winner";
+                awayClass = "loser";
+            } else if (intAway > intHome) {
+                awayClass = "winner";
+                homeClass = "loser";
+            } else if (hasPenalties) {
+                const penH = parseInt(game.home_penalty_score) || 0;
+                const penA = parseInt(game.away_penalty_score) || 0;
+                if (penH > penA) {
+                    homeClass = "winner";
+                    awayClass = "loser";
+                } else {
+                    awayClass = "winner";
+                    homeClass = "loser";
+                }
+            }
+        }
+
+        const shieldIcon = `<svg class="flag-placeholder-shield" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`;
+        const homeFlagHTML = hasHome ? getWcTeamFlagHTML(hName, "bracket-team-flag") : shieldIcon;
+        const awayFlagHTML = hasAway ? getWcTeamFlagHTML(aName, "bracket-team-flag") : shieldIcon;
+
+        const node = document.createElement("div");
+        node.className = `bracket-match-node ${nodeClass}`;
+        node.dataset.matchId = game.id;
+        node.dataset.unresolved = isUnresolved;
+
+        node.innerHTML = `
+            <div class="bracket-match-header">
+                <span class="bracket-header-date">${headerDate}</span>
+                <span class="bracket-header-status ${statusClass}">${headerStatus}</span>
+            </div>
+            <div class="bracket-match-teams">
+                <div class="bracket-team-row ${homeClass}">
+                    <div class="bracket-team-info">
+                        ${homeFlagHTML}
+                        <span>${homeDisplayName}</span>
+                    </div>
+                    <span class="bracket-team-score">${homeScoreText}</span>
+                </div>
+                <div class="bracket-team-row ${awayClass}">
+                    <div class="bracket-team-info">
+                        ${awayFlagHTML}
+                        <span>${awayDisplayName}</span>
+                    </div>
+                    <span class="bracket-team-score">${awayScoreText}</span>
+                </div>
+            </div>
+            ${upcomingFooterHTML}
+        `;
+
+        return node;
+    };
 
     columnRounds.forEach(round => {
         const col = document.createElement("div");
@@ -2217,127 +2337,22 @@ const renderKnockoutBracket = (container) => {
         round.ids.forEach((matchId, index) => {
             const game = gamesMap[matchId];
             if (!game) return;
-
-            const nodeClass = (index % 2 === 0) ? "odd-node" : "even-node";
-            const hName = game.home_team_name_en;
-            const aName = game.away_team_name_en;
-
-            const hasHome = hName && hName !== "undefined" && hName !== "null";
-            const hasAway = aName && aName !== "undefined" && aName !== "null";
-            const isUnresolved = !hasHome || !hasAway;
-
-            const homeDisplayName = hasHome ? hName : getBracketPlaceholderName(game.id, false);
-            const awayDisplayName = hasAway ? aName : getBracketPlaceholderName(game.id, true);
-
-            // Time & Date format for bracket node header
-            let headerDate = "TBD";
-            let headerStatus = "Upcoming";
-            let statusClass = "";
-            let upcomingFooterHTML = "";
-
-            if (game.local_date) {
-                const istTime = formatToIST(game.local_date, game.stadium_id, game.id);
-                headerDate = istTime.date;
-                headerStatus = istTime.time;
-            }
-
-            const state = liveStates[game.id];
-            let scoreHome = "";
-            let scoreAway = "";
-            let isPlayed = false;
-            let isLive = false;
-
-            if (state) {
-                scoreHome = state.scoreHome;
-                scoreAway = state.scoreAway;
-                isPlayed = state.finished;
-                isLive = !state.finished && game.finished === "FALSE" && game.time_elapsed !== "notstarted";
-            } else {
-                scoreHome = game.finished === "TRUE" ? (parseInt(game.home_score) || 0) : "";
-                scoreAway = game.finished === "TRUE" ? (parseInt(game.away_score) || 0) : "";
-                isPlayed = game.finished === "TRUE";
-            }
-
-            if (isLive) {
-                headerStatus = `Live - ${state ? state.minute : game.time_elapsed}'`;
-                statusClass = "live-text";
-            } else if (isPlayed) {
-                headerStatus = "FT";
-            } else {
-                upcomingFooterHTML = `<div class="bracket-node-footer">Upcoming</div>`;
-            }
-
-            // Penalty results formatting inside nodes
-            const hasPenalties = game.home_penalty_score !== undefined && 
-                                 game.home_penalty_score !== null && 
-                                 game.home_penalty_score !== "" && 
-                                 game.home_penalty_score !== "null" &&
-                                 game.away_penalty_score !== undefined &&
-                                 game.away_penalty_score !== null &&
-                                 game.away_penalty_score !== "" &&
-                                 game.away_penalty_score !== "null";
-            const homeScoreText = isPlayed ? (hasPenalties ? `${scoreHome} (${game.home_penalty_score})` : scoreHome) : "";
-            const awayScoreText = isPlayed ? (hasPenalties ? `${scoreAway} (${game.away_penalty_score})` : scoreAway) : "";
-
-            let homeClass = "";
-            let awayClass = "";
-            if (isPlayed) {
-                const intHome = parseInt(scoreHome) || 0;
-                const intAway = parseInt(scoreAway) || 0;
-                if (intHome > intAway) {
-                    homeClass = "winner";
-                    awayClass = "loser";
-                } else if (intAway > intHome) {
-                    awayClass = "winner";
-                    homeClass = "loser";
-                } else if (hasPenalties) {
-                    const penH = parseInt(game.home_penalty_score) || 0;
-                    const penA = parseInt(game.away_penalty_score) || 0;
-                    if (penH > penA) {
-                        homeClass = "winner";
-                        awayClass = "loser";
-                    } else {
-                        awayClass = "winner";
-                        homeClass = "loser";
-                    }
-                }
-            }
-
-            // Flag markup or grey shield vector placeholder
-            const shieldIcon = `<svg class="flag-placeholder-shield" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`;
-            const homeFlagHTML = hasHome ? getWcTeamFlagHTML(hName, "bracket-team-flag") : shieldIcon;
-            const awayFlagHTML = hasAway ? getWcTeamFlagHTML(aName, "bracket-team-flag") : shieldIcon;
-
-            const node = document.createElement("div");
-            node.className = `bracket-match-node ${nodeClass}`;
-            node.dataset.matchId = game.id;
-            node.dataset.unresolved = isUnresolved;
-
-            node.innerHTML = `
-                <div class="bracket-match-header">
-                    <span class="bracket-header-date">${headerDate}</span>
-                    <span class="bracket-header-status ${statusClass}">${headerStatus}</span>
-                </div>
-                <div class="bracket-match-teams">
-                    <div class="bracket-team-row ${homeClass}">
-                        <div class="bracket-team-info">
-                            ${homeFlagHTML}
-                            <span>${homeDisplayName}</span>
-                        </div>
-                        <span class="bracket-team-score">${homeScoreText}</span>
-                    </div>
-                    <div class="bracket-team-row ${awayClass}">
-                        <div class="bracket-team-info">
-                            ${awayFlagHTML}
-                            <span>${awayDisplayName}</span>
-                        </div>
-                        <span class="bracket-team-score">${awayScoreText}</span>
-                    </div>
-                </div>
-                ${upcomingFooterHTML}
-            `;
+            const node = buildNode(game, index);
             col.appendChild(node);
         });
+
+        if (round.key === "final") {
+            const game103 = gamesMap["103"];
+            if (game103) {
+                const divider = document.createElement("div");
+                divider.className = "bracket-third-place-title";
+                divider.textContent = "Third Place Match";
+                col.appendChild(divider);
+
+                const node103 = buildNode(game103, 1, "third-place-node");
+                col.appendChild(node103);
+            }
+        }
 
         bracketWrapper.appendChild(col);
     });
