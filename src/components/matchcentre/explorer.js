@@ -1,0 +1,309 @@
+import { state } from './state.js';
+import { teamData } from '../teams.js';
+import { getWcTeamFlagHTML, getStadiumName, formatToIST } from './utils.js';
+import { renderKnockoutBracket } from './bracket.js';
+import { renderGroupsExplorer } from './standings.js';
+
+export const openExplorer = () => {
+    document.getElementById("explorer-overlay")?.classList.add("open");
+    const searchInput = document.getElementById("explorer-search");
+    if (searchInput) searchInput.value = "";
+
+    const searchWrapper = document.getElementById("explorer-search-wrapper");
+    if (searchWrapper) {
+        searchWrapper.style.display = "none";
+        delete searchWrapper.dataset.randomized;
+    }
+    
+    document.querySelectorAll("#explorer-filter-tabs .filter-btn").forEach(b => {
+        if (b.dataset.tab === "calendar") b.classList.add("active");
+        else b.classList.remove("active");
+    });
+    
+    filterExplorerGames("calendar", "");
+};
+
+export const closeExplorer = () => {
+    document.getElementById("explorer-overlay")?.classList.remove("open");
+};
+
+export const openBracket = () => {
+    document.getElementById("bracket-overlay")?.classList.add("open");
+    renderKnockoutBracket(document.getElementById("bracket-games-grid"));
+};
+
+export const closeBracket = () => {
+    document.getElementById("bracket-overlay")?.classList.remove("open");
+};
+
+export const openGroups = () => {
+    document.getElementById("groups-overlay")?.classList.add("open");
+    renderGroupsExplorer(document.getElementById("groups-explorer-container"));
+};
+
+export const closeGroups = () => {
+    document.getElementById("groups-overlay")?.classList.remove("open");
+};
+
+export const filterExplorerGames = (activeTab, searchVal) => {
+    const grid = document.getElementById("explorer-games-grid");
+    const searchWrapper = document.getElementById("explorer-search-wrapper");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    if (activeTab === "calendar") {
+        if (searchWrapper) searchWrapper.style.display = "none";
+        grid.style.display = "block";
+        grid.style.maxHeight = "55vh";
+        drawCalendarGrid(grid);
+    } else {
+        if (searchWrapper) {
+            searchWrapper.style.display = "flex";
+            if (!searchWrapper.dataset.randomized) {
+                const teamKeys = Object.keys(teamData);
+                const randomTeam = teamKeys[Math.floor(Math.random() * teamKeys.length)];
+                const searchInput = document.getElementById("explorer-search");
+                if (searchInput) {
+                    searchInput.placeholder = `e.g. ${randomTeam}`;
+                    searchInput.value = "";
+                }
+                searchWrapper.dataset.randomized = "true";
+            }
+        }
+        grid.style.display = "grid";
+        grid.style.maxHeight = "45vh";
+
+        const query = searchVal.toLowerCase().trim();
+        const games = state.worldCupGames || [];
+        const sorted = [...games].sort((x, y) => parseInt(x.id) - parseInt(y.id));
+        let matchedCount = 0;
+
+        sorted.forEach(game => {
+            const hName = game.homeTeam?.name || game.home_team_name_en || "TBD";
+            const aName = game.awayTeam?.name || game.away_team_name_en || "TBD";
+
+            const matchesSearch = hName.toLowerCase().includes(query) || 
+                                  aName.toLowerCase().includes(query) || 
+                                  (game.group && game.group.toLowerCase().includes(query));
+
+            if (matchesSearch) {
+                const card = createExplorerMatchCard(game);
+                grid.appendChild(card);
+                matchedCount++;
+            }
+        });
+
+        if (matchedCount === 0) {
+            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 30px; font-size: 13.5px;">No matches found matching criteria.</div>`;
+        }
+    }
+};
+
+const showWrongDateToast = () => {
+    let toast = document.getElementById("calendar-wrong-date-toast");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "calendar-wrong-date-toast";
+        toast.className = "calendar-toast-alert";
+        toast.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span>Wrong date for World Cup</span>
+        `;
+        document.body.appendChild(toast);
+    }
+    
+    toast.classList.remove("visible");
+    toast.offsetHeight;
+    toast.classList.add("visible");
+    
+    setTimeout(() => {
+        toast.classList.remove("visible");
+    }, 2100);
+};
+
+export const drawCalendarGrid = (container) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "calendar-wrapper";
+
+    const games = state.worldCupGames || [];
+
+    wrapper.innerHTML = `
+        <div class="calendar-month-title">June 2026 (IST)</div>
+        <div class="calendar-grid">
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
+            
+            <div class="calendar-day-cell empty"></div>
+            ${Array.from({ length: 30 }, (_, i) => {
+                const day = i + 1;
+                let classes = "calendar-day-cell";
+                if (day < 12) {
+                    classes += " inactive-date";
+                } else {
+                    const dateFullStr = `Jun ${day}, 2026`;
+                    const hasMatches = games.some(game => {
+                        let gameDateStr = "";
+                        if (game.utcDate) {
+                            gameDateStr = new Date(game.utcDate).toLocaleDateString([], { month: 'short', day: 'numeric' });
+                        } else if (game.local_date) {
+                            const ist = formatToIST(game.local_date, game.stadium_id, game.id);
+                            gameDateStr = ist.date;
+                        }
+                        return gameDateStr.startsWith(`Jun ${day}`) || gameDateStr.startsWith(`June ${day}`);
+                    });
+                    if (hasMatches) {
+                        classes += " active-matchday";
+                    }
+                }
+                return `<div class="${classes}" data-day="${day}">${day}</div>`;
+            }).join("")}
+        </div>
+    `;
+
+    container.appendChild(wrapper);
+
+    wrapper.querySelectorAll(".calendar-day-cell:not(.empty)").forEach(cell => {
+        cell.addEventListener("click", () => {
+            const day = parseInt(cell.dataset.day);
+            if (day < 12) {
+                showWrongDateToast();
+            } else {
+                wrapper.querySelectorAll(".calendar-day-cell").forEach(c => c.classList.remove("selected-date"));
+                cell.classList.add("selected-date");
+                drawDayMatchesView(container, day);
+            }
+        });
+    });
+};
+
+export const drawDayMatchesView = (container, day) => {
+    container.innerHTML = "";
+
+    const dayMatchesWrapper = document.createElement("div");
+    dayMatchesWrapper.className = "day-matches-wrapper";
+
+    const dateFullStr = `Jun ${day}, 2026`;
+    const displayDateStr = `June ${day}, 2026`;
+
+    dayMatchesWrapper.innerHTML = `
+        <div class="day-matches-header">
+            <button type="button" class="day-back-btn" id="calendar-day-back-btn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <span>Back to Calendar</span>
+            </button>
+            <span class="day-matches-title">Matches on ${displayDateStr}</span>
+        </div>
+        <div class="day-matches-list" style="display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 40vh; padding-right: 4px;">
+        </div>
+    `;
+
+    container.appendChild(dayMatchesWrapper);
+    const listContainer = dayMatchesWrapper.querySelector(".day-matches-list");
+
+    const games = state.worldCupGames || [];
+    const dayMatches = games.filter(game => {
+        let gameDateStr = "";
+        if (game.utcDate) {
+            gameDateStr = new Date(game.utcDate).toLocaleDateString([], { month: 'short', day: 'numeric' });
+        } else if (game.local_date) {
+            const ist = formatToIST(game.local_date, game.stadium_id, game.id);
+            gameDateStr = ist.date;
+        }
+        return gameDateStr.startsWith(`Jun ${day}`) || gameDateStr.startsWith(`June ${day}`);
+    });
+
+    if (dayMatches.length === 0) {
+        listContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 13.5px;">No matches scheduled on this day.</div>`;
+    } else {
+        dayMatches.forEach(game => {
+            const card = createExplorerMatchCard(game);
+            listContainer.appendChild(card);
+        });
+    }
+
+    document.getElementById("calendar-day-back-btn")?.addEventListener("click", () => {
+        container.innerHTML = "";
+        drawCalendarGrid(container);
+    });
+};
+
+export const createExplorerMatchCard = (game) => {
+    const card = document.createElement("div");
+    card.className = "live-match-card";
+    card.style.cursor = "pointer";
+
+    const liveState = state.liveStates[game.id];
+    let scoreHome = game.home_score;
+    let scoreAway = game.away_score;
+    let isLive = game.finished === "FALSE" && game.time_elapsed !== "notstarted";
+    let isFinished = game.finished === "TRUE";
+    
+    if (liveState) {
+        scoreHome = liveState.scoreHome;
+        scoreAway = liveState.scoreAway;
+        isLive = !liveState.finished && game.finished === "FALSE" && game.time_elapsed !== "notstarted";
+        isFinished = liveState.finished;
+    }
+
+    if (game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined) {
+        scoreHome = game.score.fullTime.home;
+        scoreAway = game.score.fullTime.away;
+        isFinished = game.status === "FINISHED";
+        isLive = game.status === "IN_PLAY" || game.status === "PAUSED";
+    }
+
+    const scoreText = (isLive || isFinished) ? `${scoreHome} - ${scoreAway}` : "vs";
+    
+    let timeDisplay = "";
+    if (game.utcDate) {
+        timeDisplay = new Date(game.utcDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (game.local_date) {
+        const istTime = formatToIST(game.local_date, game.stadium_id || game.stadium, game.id);
+        timeDisplay = istTime.time;
+    }
+
+    let badgeHTML = "";
+    if (isLive) {
+        const minVal = liveState ? liveState.minute : game.time_elapsed;
+        badgeHTML = `<span class="match-status-badge live">Live - ${minVal}'</span>`;
+    } else if (isFinished) {
+        badgeHTML = `<span class="match-status-badge finished">Finished</span>`;
+    } else {
+        badgeHTML = `<span class="match-status-badge upcoming">Upcoming - ${timeDisplay}</span>`;
+    }
+
+    const hName = game.homeTeam?.name || game.home_team_name_en || "TBD";
+    const aName = game.awayTeam?.name || game.away_team_name_en || "TBD";
+
+    card.innerHTML = `
+        <div class="m-card-teams">
+            <div class="m-card-team-row">
+                ${getWcTeamFlagHTML(hName, "m-card-flag")}
+                <span class="m-card-team-name">${hName}</span>
+            </div>
+            <div class="m-card-team-row">
+                ${getWcTeamFlagHTML(aName, "m-card-flag")}
+                <span class="m-card-team-name">${aName}</span>
+            </div>
+        </div>
+        <div class="m-card-score-box" style="width: 50%; align-items: flex-end; justify-content: center; gap: 4px;">
+            <span class="m-card-score" style="font-size: 15px;">${scoreText}</span>
+            <span class="m-card-meta" style="margin-top: 2px; text-align: right; line-height: 1.3;">
+                Group ${game.group ? game.group.replace("GROUP_", "") : "Knockout"} • ${timeDisplay}<br>
+                <small style="color: var(--text-muted); font-size: 8.5px;">🏟️ ${getStadiumName(game.stadium_id || game.stadium)}</small>
+            </span>
+            ${badgeHTML}
+        </div>
+    `;
+
+    card.addEventListener("click", () => {
+        import('./popups.js').then(m => m.openMatchDetailPopup(game));
+    });
+
+    return card;
+};
