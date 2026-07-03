@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
     }
 
     // Build Target API URL
-    let targetUrl = "https://api.football-data.org/v4/matches";
+    let targetUrl = "https://api.football-data.org/v4/competitions/WC/matches";
     if (isDetailRequest) {
         targetUrl = `https://api.football-data.org/v4/matches/${matchId}`;
     } else {

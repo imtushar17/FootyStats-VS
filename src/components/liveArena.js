@@ -379,7 +379,7 @@ export const setupLiveArenaListeners = () => {
 
         const matchId = node.dataset.matchId;
         const isUnresolved = node.dataset.unresolved === "true";
-        const game = state.worldCupGames.find(g => g.id === matchId);
+        const game = state.worldCupGames.find(g => String(g.id) === String(matchId));
 
         if (isUnresolved) {
             node.classList.add("shake-node");

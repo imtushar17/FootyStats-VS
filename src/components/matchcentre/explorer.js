@@ -121,15 +121,82 @@ const showWrongDateToast = () => {
     }, 2100);
 };
 
-export const drawCalendarGrid = (container) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "calendar-wrapper";
+// Calendar state: track which month is currently displayed (6 = June, 7 = July)
+let calendarCurrentMonth = 6;
 
-    const games = state.worldCupGames || [];
+// Helper: get how many days in a given month/year
+const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
 
-    wrapper.innerHTML = `
-        <div class="calendar-month-title">June 2026 (IST)</div>
-        <div class="calendar-grid">
+// Helper: get day-of-week index of the 1st of a month (0=Sun)
+const getFirstDayOfWeek = (year, month) => new Date(year, month - 1, 1).getDay();
+
+// Helper: World Cup start date (June 12, 2026 in IST)
+const WC_START = { month: 6, day: 12 };
+const WC_END = { month: 7, day: 19 };
+
+const isBeforeWC = (month, day) => {
+    if (month < WC_START.month) return true;
+    if (month === WC_START.month && day < WC_START.day) return true;
+    return false;
+};
+
+const isAfterWC = (month, day) => {
+    if (month > WC_END.month) return true;
+    if (month === WC_END.month && day > WC_END.day) return true;
+    return false;
+};
+
+// Shared helper: count matches on a given date (IST-based for API games)
+const getMatchesOnDate = (games, year, month, day) => {
+    const monthShortNames = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const shortMonthStr = monthShortNames[month];
+    return games.filter(game => {
+        if (game.utcDate) {
+            // Convert UTC to IST (+5:30)
+            const utcMs = new Date(game.utcDate).getTime();
+            const istMs = utcMs + (5.5 * 60 * 60 * 1000);
+            const istDate = new Date(istMs);
+            return istDate.getFullYear() === year && (istDate.getMonth() + 1) === month && istDate.getDate() === day;
+        } else if (game.local_date) {
+            const ist = formatToIST(game.local_date, game.stadium_id, game.id);
+            const dateStr = ist.date || "";
+            return dateStr.startsWith(`${shortMonthStr} ${day}`) || dateStr.startsWith(`${shortMonthStr}  ${day}`);
+        }
+        return false;
+    });
+};
+
+const buildCalendarMonthHTML = (year, month, games) => {
+    const monthNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDay = getFirstDayOfWeek(year, month);
+
+    let cells = "";
+    // leading empty cells
+    for (let i = 0; i < firstDay; i++) {
+        cells += `<div class="calendar-day-cell empty"></div>`;
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+        const beforeWC = isBeforeWC(month, day);
+        const afterWC = isAfterWC(month, day);
+        const outOfTournament = beforeWC || afterWC;
+        let classes = "calendar-day-cell";
+        let badge = "";
+
+        if (outOfTournament) {
+            classes += " inactive-date";
+        } else {
+            const dayMatches = getMatchesOnDate(games, year, month, day);
+            if (dayMatches.length > 0) {
+                classes += " active-matchday";
+                badge = `<span class="cal-match-count">${dayMatches.length}</span>`;
+            }
+        }
+        cells += `<div class="${classes}" data-day="${day}" data-month="${month}">${day}${badge}</div>`;
+    }
+
+    return `
+        <div class="calendar-grid-inner" data-month="${month}">
             <div class="calendar-day-header">Sun</div>
             <div class="calendar-day-header">Mon</div>
             <div class="calendar-day-header">Tue</div>
@@ -137,58 +204,109 @@ export const drawCalendarGrid = (container) => {
             <div class="calendar-day-header">Thu</div>
             <div class="calendar-day-header">Fri</div>
             <div class="calendar-day-header">Sat</div>
-            
-            <div class="calendar-day-cell empty"></div>
-            ${Array.from({ length: 30 }, (_, i) => {
-                const day = i + 1;
-                let classes = "calendar-day-cell";
-                if (day < 12) {
-                    classes += " inactive-date";
-                } else {
-                    const dateFullStr = `Jun ${day}, 2026`;
-                    const hasMatches = games.some(game => {
-                        let gameDateStr = "";
-                        if (game.utcDate) {
-                            gameDateStr = new Date(game.utcDate).toLocaleDateString([], { month: 'short', day: 'numeric' });
-                        } else if (game.local_date) {
-                            const ist = formatToIST(game.local_date, game.stadium_id, game.id);
-                            gameDateStr = ist.date;
-                        }
-                        return gameDateStr.startsWith(`Jun ${day}`) || gameDateStr.startsWith(`June ${day}`);
-                    });
-                    if (hasMatches) {
-                        classes += " active-matchday";
-                    }
-                }
-                return `<div class="${classes}" data-day="${day}">${day}</div>`;
-            }).join("")}
+            ${cells}
+        </div>
+    `;
+};
+
+export const drawCalendarGrid = (container, targetMonth) => {
+    if (targetMonth !== undefined) calendarCurrentMonth = targetMonth;
+
+    const year = 2026;
+    const games = state.worldCupGames || [];
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "calendar-wrapper";
+
+    const monthNames = ["", "January", "February", "March", "April", "May", "June", "July"];
+    const canGoPrev = calendarCurrentMonth > 6;
+    const canGoNext = calendarCurrentMonth < 7;
+
+    wrapper.innerHTML = `
+        <div class="calendar-month-nav">
+            <button type="button" class="cal-nav-btn" id="cal-prev-month" ${!canGoPrev ? "disabled" : ""} aria-label="Previous month">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="calendar-month-title-row">
+                <span class="calendar-month-title">${monthNames[calendarCurrentMonth]} ${year}</span>
+                <span class="calendar-month-subtitle">IST · FIFA World Cup 2026</span>
+            </div>
+            <button type="button" class="cal-nav-btn" id="cal-next-month" ${!canGoNext ? "disabled" : ""} aria-label="Next month">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+        </div>
+        <div class="calendar-grid-viewport">
+            ${buildCalendarMonthHTML(year, calendarCurrentMonth, games)}
+        </div>
+        <div class="calendar-legend">
+            <span class="legend-dot active-matchday"></span><span>Match Day</span>
+            <span class="legend-dot inactive-date"></span><span>No Matches</span>
         </div>
     `;
 
     container.appendChild(wrapper);
 
+    // Month navigation buttons
+    wrapper.querySelector("#cal-prev-month")?.addEventListener("click", () => {
+        if (calendarCurrentMonth > 6) {
+            container.innerHTML = "";
+            drawCalendarGrid(container, calendarCurrentMonth - 1);
+        }
+    });
+    wrapper.querySelector("#cal-next-month")?.addEventListener("click", () => {
+        if (calendarCurrentMonth < 7) {
+            container.innerHTML = "";
+            drawCalendarGrid(container, calendarCurrentMonth + 1);
+        }
+    });
+
+    // Touch/swipe support
+    let touchStartX = 0;
+    const viewport = wrapper.querySelector(".calendar-grid-viewport");
+    if (viewport) {
+        viewport.addEventListener("touchstart", e => {
+            touchStartX = e.changedTouches[0].clientX;
+        }, { passive: true });
+        viewport.addEventListener("touchend", e => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(dx) > 50) {
+                if (dx < 0 && calendarCurrentMonth < 7) {
+                    container.innerHTML = "";
+                    drawCalendarGrid(container, calendarCurrentMonth + 1);
+                } else if (dx > 0 && calendarCurrentMonth > 6) {
+                    container.innerHTML = "";
+                    drawCalendarGrid(container, calendarCurrentMonth - 1);
+                }
+            }
+        }, { passive: true });
+    }
+
+    // Day click listeners
     wrapper.querySelectorAll(".calendar-day-cell:not(.empty)").forEach(cell => {
         cell.addEventListener("click", () => {
             const day = parseInt(cell.dataset.day);
-            if (day < 12) {
+            const month = parseInt(cell.dataset.month);
+            if (isBeforeWC(month, day) || isAfterWC(month, day)) {
                 showWrongDateToast();
             } else {
                 wrapper.querySelectorAll(".calendar-day-cell").forEach(c => c.classList.remove("selected-date"));
                 cell.classList.add("selected-date");
-                drawDayMatchesView(container, day);
+                drawDayMatchesView(container, day, month);
             }
         });
     });
 };
 
-export const drawDayMatchesView = (container, day) => {
+export const drawDayMatchesView = (container, day, month) => {
     container.innerHTML = "";
+    const year = 2026;
+    const displayMonth = month || 6;
+
+    const monthFullNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const displayDateStr = `${monthFullNames[displayMonth]} ${day}, ${year}`;
 
     const dayMatchesWrapper = document.createElement("div");
     dayMatchesWrapper.className = "day-matches-wrapper";
-
-    const dateFullStr = `Jun ${day}, 2026`;
-    const displayDateStr = `June ${day}, 2026`;
 
     dayMatchesWrapper.innerHTML = `
         <div class="day-matches-header">
@@ -206,16 +324,7 @@ export const drawDayMatchesView = (container, day) => {
     const listContainer = dayMatchesWrapper.querySelector(".day-matches-list");
 
     const games = state.worldCupGames || [];
-    const dayMatches = games.filter(game => {
-        let gameDateStr = "";
-        if (game.utcDate) {
-            gameDateStr = new Date(game.utcDate).toLocaleDateString([], { month: 'short', day: 'numeric' });
-        } else if (game.local_date) {
-            const ist = formatToIST(game.local_date, game.stadium_id, game.id);
-            gameDateStr = ist.date;
-        }
-        return gameDateStr.startsWith(`Jun ${day}`) || gameDateStr.startsWith(`June ${day}`);
-    });
+    const dayMatches = getMatchesOnDate(games, year, displayMonth, day);
 
     if (dayMatches.length === 0) {
         listContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 13.5px;">No matches scheduled on this day.</div>`;
@@ -228,7 +337,7 @@ export const drawDayMatchesView = (container, day) => {
 
     document.getElementById("calendar-day-back-btn")?.addEventListener("click", () => {
         container.innerHTML = "";
-        drawCalendarGrid(container);
+        drawCalendarGrid(container, displayMonth);
     });
 };
 

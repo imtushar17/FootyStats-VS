@@ -420,17 +420,91 @@ body.dark-theme .header-controls {
     animation: fadeIn 0.4s ease;
 }
 
+/* Month navigation bar */
+.calendar-month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 4px;
+}
+
+.calendar-month-title-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+}
+
 .calendar-month-title {
     font-family: var(--font-heading);
-    font-size: 16px;
-    font-weight: 800;
+    font-size: 17px;
+    font-weight: 900;
     color: var(--text-main);
     text-align: center;
-    margin-bottom: 2px;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+.calendar-month-subtitle {
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
     letter-spacing: 0.5px;
 }
 
+.cal-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.cal-nav-btn:hover:not([disabled]) {
+    background: var(--accent-blue-soft);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    transform: scale(1.08);
+}
+
+.cal-nav-btn[disabled] {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Calendar grid viewport (swipeable) */
+.calendar-grid-viewport {
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.calendar-grid-inner {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    padding: 12px;
+    animation: calFadeSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes calFadeSlide {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Legacy .calendar-grid kept for backward compatibility */
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -494,16 +568,22 @@ body.dark-theme .header-controls {
 .calendar-day-cell.active-matchday {
     background: var(--accent-blue-soft);
     border-color: rgba(56, 189, 248, 0.3);
+    position: relative;
 }
 
-.calendar-day-cell.active-matchday::after {
-    content: '';
+/* Match count badge (replaces the old ::after dot) */
+.cal-match-count {
     position: absolute;
-    bottom: 5px;
-    width: 5px;
-    height: 5px;
+    bottom: 3px;
+    right: 3px;
     background: var(--accent-blue);
-    border-radius: 50%;
+    color: #fff;
+    font-size: 7.5px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 1.5px 3px;
+    border-radius: 4px;
+    pointer-events: none;
 }
 
 .calendar-day-cell.selected-date {
@@ -593,3 +673,32 @@ body.dark-theme .header-controls {
     to { transform: translateX(0); opacity: 1; }
 }
 
+/* Calendar legend */
+.calendar-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 4px 0 0 0;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+}
+
+.legend-dot.active-matchday {
+    background: var(--accent-blue-soft);
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
+.legend-dot.inactive-date {
+    background: var(--bg-primary);
+    opacity: 0.5;
+}
