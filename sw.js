@@ -1,10 +1,11 @@
-const CACHE_NAME = 'footystats-v7';
+const CACHE_NAME = 'footystats-v8';
 const FLAGS_CACHE_NAME = 'footystats-flags';
 const FONTS_CACHE_NAME = 'footystats-fonts';
 const PORTRAITS_CACHE_NAME = 'footystats-portraits';
 const ASSETS = [
   './',
   './index.html',
+  './manifest.json',
   './style.css',
   './css/variables.css',
   './css/components.css',
@@ -17,12 +18,22 @@ const ASSETS = [
   './assets/fifa_2026_poster.png',
   './src/app.js',
   './src/data/teams.js',
+  './src/data/lineups.js',
   './src/components/theme.js',
   './src/components/selector.js',
   './src/components/comparison.js',
   './src/components/tactics.js',
   './src/components/trophies.js',
-  './src/components/liveArena.js'
+  './src/components/liveArena.js',
+  './src/components/matchcentre/state.js',
+  './src/components/matchcentre/utils.js',
+  './src/components/matchcentre/api.js',
+  './src/components/matchcentre/standings.js',
+  './src/components/matchcentre/lineups.js',
+  './src/components/matchcentre/popups.js',
+  './src/components/matchcentre/explorer.js',
+  './src/components/matchcentre/bracket.js',
+  './src/components/matchcentre/console.js'
 ];
 
 self.addEventListener('install', e => {

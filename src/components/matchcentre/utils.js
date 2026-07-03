@@ -1,4 +1,4 @@
-import { teamData } from '../data/teams.js';
+import { teamData } from '../../data/teams.js';
 
 export const OFFICIAL_IST_MAP = {
     "1": { date: "Jun 12", dateFull: "Jun 12, 2026", dateLong: "Friday, June 12, 2026", time: "00:30 IST", full: "Jun 12, 2026 • 00:30 IST" },

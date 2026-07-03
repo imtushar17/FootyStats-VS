@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getStartingXI } from '../lineups.js';
+import { getStartingXI } from '../../data/lineups.js';
 import { getWcTeamFlagHTML, getTeamData } from './utils.js';
 
 export const drawLineupPitch = (game, selectedTeamName) => {
@@ -74,6 +74,7 @@ export const drawLineupPitch = (game, selectedTeamName) => {
 
     // Default visual lineups pitch fallback
     const startingXI = getStartingXI(selectedTeamName);
+    const isEstimated = !!startingXI.isFallbackLineup;
 
     const gkList = startingXI.filter(p => p.pos === "GK");
     const defList = startingXI.filter(p => p.pos === "DEF");
@@ -83,7 +84,12 @@ export const drawLineupPitch = (game, selectedTeamName) => {
     const formationText = `${defList.length}-${midList.length}-${fwdList.length}`;
     
     if (titleEl) titleEl.textContent = `${selectedTeamName} Lineup`;
-    if (subEl) subEl.innerHTML = `Formation: ${formationText} | Coach: ${activeTeamObj.coach}`;
+    if (subEl) {
+        const estimatedBadge = isEstimated
+            ? `<span class="estimated-lineup-badge">Estimated</span>`
+            : "";
+        subEl.innerHTML = `Formation: ${formationText} | Coach: ${activeTeamObj.coach}${estimatedBadge ? ' ' + estimatedBadge : ''}`;
+    }
 
     if (!jerseysContainer) return;
     jerseysContainer.innerHTML = "";

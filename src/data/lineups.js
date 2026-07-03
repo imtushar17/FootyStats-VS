@@ -169,7 +169,7 @@ export const getStartingXI = (teamName) => {
 
     const suffixes = genericSurnames[teamName] || ["Silva", "Santos", "Fernandes", "Mendes", "Gomes", "Almeida"];
 
-    return [
+    const result = [
         { name: gk.name, pos: "GK", shirt: 1 },
         { name: `${suffixes[0]}`, pos: "DEF", shirt: 2 },
         { name: def.name, pos: "DEF", shirt: 4 },
@@ -182,4 +182,7 @@ export const getStartingXI = (teamName) => {
         { name: st.name, pos: "ST", shirt: 9 },
         { name: `${suffixes[5]}`, pos: "FWD", shirt: 11 }
     ];
+    // Mark this as an estimated/generated lineup so the UI can display a disclaimer badge
+    result.isFallbackLineup = true;
+    return result;
 };

@@ -1,25 +1,27 @@
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches:
-      - main
-
-permissions:
-  contents: write
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: .
-          branch: gh-pages
-
+# GitHub Pages deployment is DISABLED.
+# This project uses Vercel as the sole deployment target because it requires
+# a real serverless runtime to execute /api/matches.js (the football-data.org proxy).
+# GitHub Pages is static-only and cannot run Node.js serverless functions.
+#
+# To re-enable, restore the workflow definition below and remove this comment block.
+#
+# name: Deploy to GitHub Pages
+# on:
+#   push:
+#     branches:
+#       - main
+# permissions:
+#   contents: write
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     env:
+#       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#       - name: Deploy to GitHub Pages
+#         uses: JamesIves/github-pages-deploy-action@v4
+#         with:
+#           folder: .
+#           branch: gh-pages

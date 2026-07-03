@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { teamData } from '../teams.js';
+import { teamData } from '../../data/teams.js';
 import { getWcTeamFlagHTML, getStadiumName, formatToIST } from './utils.js';
 import { renderKnockoutBracket } from './bracket.js';
 import { renderGroupsExplorer } from './standings.js';

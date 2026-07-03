@@ -234,7 +234,7 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
         drawStartersOnPitch();
     } else {
         // Fallback to static starting XI
-        import('../lineups.js').then(m => {
+        import('../../data/lineups.js').then(m => {
             const staticStarters = m.getStartingXI(teamName);
             if (staticStarters && staticStarters.length > 0) {
                 starters = staticStarters.map(p => ({
