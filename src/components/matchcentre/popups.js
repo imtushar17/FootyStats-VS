@@ -13,52 +13,77 @@ export const closeMatchDetail = () => {
     document.getElementById("match-detail-overlay")?.classList.remove("open");
 };
 
-const getScorersHTML = (game) => {
-    const parseScorers = (scorersStr) => {
-        if (!scorersStr || scorersStr === "null") return [];
-        try {
-            if (scorersStr.startsWith("{")) {
-                return JSON.parse(scorersStr.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']'));
+const getScorersHTML = (game, hName, aName) => {
+    // Primary source: live API goals array from the deep match fetch
+    const apiGoals = state.currentSelectedMatchDetails?.goals || [];
+
+    // Determine which team is home/away from the detail object for matching
+    const homeTeamId = state.currentSelectedMatchDetails?.homeTeam?.id || game.homeTeam?.id;
+    const awayTeamId = state.currentSelectedMatchDetails?.awayTeam?.id || game.awayTeam?.id;
+
+    let homeGoals = [];
+    let awayGoals = [];
+
+    if (apiGoals.length > 0) {
+        apiGoals.forEach(goal => {
+            const scorerName = goal.scorer?.name || goal.player?.name || "Goal";
+            const minute = goal.minute ? `${goal.minute}'` : "";
+            const minuteExtra = goal.injuryTime ? `+${goal.injuryTime}` : "";
+            const minuteStr = minute ? `${goal.minute}${minuteExtra ? '+'+goal.injuryTime : ''}'` : "";
+            const label = `${scorerName}${minuteStr ? ' ' + minuteStr : ''}`;
+
+            const teamId = goal.team?.id;
+            if (teamId === homeTeamId) {
+                homeGoals.push(label);
+            } else if (teamId === awayTeamId) {
+                awayGoals.push(label);
+            } else {
+                // Fallback: try to match by team name
+                const goalTeamName = goal.team?.name || "";
+                const normGoalTeam = goalTeamName.toLowerCase();
+                const normHome = hName.toLowerCase();
+                if (normGoalTeam && normHome && normGoalTeam.includes(normHome.split(" ")[0])) {
+                    homeGoals.push(label);
+                } else {
+                    awayGoals.push(label);
+                }
             }
-            return [scorersStr];
-        } catch(e) {
-            return [String(scorersStr).replace(/[{}"]/g, "")];
-        }
-    };
+        });
+    } else {
+        // Legacy fallback for static data (old JSON format)
+        const parseScorers = (scorersStr) => {
+            if (!scorersStr || scorersStr === "null") return [];
+            try {
+                if (scorersStr.startsWith("{")) {
+                    return JSON.parse(scorersStr.replace(/\u201c|\u201d/g, '"').replace(/{/g, '[').replace(/}/g, ']'));
+                }
+                return [scorersStr];
+            } catch(e) {
+                return [String(scorersStr).replace(/[{}"]/g, "")];
+            }
+        };
+        homeGoals = parseScorers(game.home_scorers);
+        awayGoals = parseScorers(game.away_scorers);
 
-    const homeList = parseScorers(game.home_scorers);
-    const awayList = parseScorers(game.away_scorers);
-
-    const liveState = state.liveStates[game.id];
-    let scoreHome = game.finished === "TRUE" ? (parseInt(game.home_score) || 0) : 0;
-    let scoreAway = game.finished === "TRUE" ? (parseInt(game.away_score) || 0) : 0;
-
-    if (liveState) {
-        scoreHome = liveState.scoreHome;
-        scoreAway = liveState.scoreAway;
+        // Pad with generic Goal labels if score > scorer count
+        const liveState = state.liveStates[game.id];
+        const scoreHome = liveState ? liveState.scoreHome : (parseInt(game.home_score) || 0);
+        const scoreAway = liveState ? liveState.scoreAway : (parseInt(game.away_score) || 0);
+        while (homeGoals.length < scoreHome) homeGoals.push("Goal");
+        while (awayGoals.length < scoreAway) awayGoals.push("Goal");
     }
 
-    const finalHomeList = [...homeList];
-    while (finalHomeList.length < scoreHome) {
-        finalHomeList.push("Goal");
-    }
-
-    const finalAwayList = [...awayList];
-    while (finalAwayList.length < scoreAway) {
-        finalAwayList.push("Goal");
-    }
-
-    if (finalHomeList.length === 0 && finalAwayList.length === 0) {
+    if (homeGoals.length === 0 && awayGoals.length === 0) {
         return `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); font-size: 11px; padding: 10px 0;">No goals scored</div>`;
     }
 
     return `
         <div class="popup-scorers-col home">
-            ${finalHomeList.map(s => `<div>⚽ ${s}</div>`).join("")}
+            ${homeGoals.map(s => `<div>⚽ ${s}</div>`).join("")}
         </div>
         <div class="popup-scorers-divider">|</div>
         <div class="popup-scorers-col away">
-            ${finalAwayList.map(s => `<div>⚽ ${s}</div>`).join("")}
+            ${awayGoals.map(s => `<div>⚽ ${s}</div>`).join("")}
         </div>
     `;
 };
@@ -364,7 +389,7 @@ export const openMatchDetailPopup = async (game) => {
             <div class="popup-scorers-box">
                 <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; text-align: center;">Goalscorers</div>
                 <div class="popup-scorers-list">
-                    ${getScorersHTML(game)}
+                    ${getScorersHTML(game, hName, aName)}
                 </div>
             </div>
             ${penaltiesHTML}
