@@ -24,14 +24,18 @@ const getScorersHTML = (game, hName, aName) => {
     let awayGoals = [];
 
     if (details?.HomeTeam?.Goals || details?.AwayTeam?.Goals) {
-        homeGoals = (details.HomeTeam.Goals || []).map(g => {
-            const name = escapeHTML(getScorerName(details.HomeTeam, g.IdPlayer));
-            return `${name} ${escapeHTML(g.Minute || "")}`;
-        });
-        awayGoals = (details.AwayTeam.Goals || []).map(g => {
-            const name = escapeHTML(getScorerName(details.AwayTeam, g.IdPlayer));
-            return `${name} ${escapeHTML(g.Minute || "")}`;
-        });
+        homeGoals = (details.HomeTeam.Goals || [])
+            .filter(g => String(g.Period) !== "11")
+            .map(g => {
+                const name = escapeHTML(getScorerName(details.HomeTeam, g.IdPlayer));
+                return `${name} ${escapeHTML(g.Minute || "")}`;
+            });
+        awayGoals = (details.AwayTeam.Goals || [])
+            .filter(g => String(g.Period) !== "11")
+            .map(g => {
+                const name = escapeHTML(getScorerName(details.AwayTeam, g.IdPlayer));
+                return `${name} ${escapeHTML(g.Minute || "")}`;
+            });
     } else {
         // Fallback: legacy static data
         const parseScorers = (scorersStr) => {
@@ -180,9 +184,13 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
             const escapedShirt = escapeHTML(player.shirt);
             const surname = escapeHTML(player.name.split(" ").pop());
 
-            node.innerHTML = `
-                <div class="jersey-wrapper">
-                    <svg class="player-jersey-svg" viewBox="0 0 100 100">
+            const escapedPicture = player.picture ? escapeHTML(player.picture) : "";
+            const avatarHTML = escapedPicture
+                ? `<div class="player-pitch-avatar-wrapper" style="border: 2px solid ${primaryColor};">
+                     <img src="${escapedPicture}" class="player-pitch-avatar" alt="${escapedName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                     <div class="player-pitch-avatar-number-badge" style="background: ${primaryColor}; color: ${secondaryColor};">${escapedShirt}</div>
+                   </div>`
+                : `<svg class="player-jersey-svg" viewBox="0 0 100 100">
                         <filter id="popup-jersey-shadow-${escapeHTML(safePlayerId)}" x="-15%" y="-15%" width="130%" height="130%">
                             <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-opacity="0.35"/>
                         </filter>
@@ -199,7 +207,11 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
                             <path d="M 40,32 A 10,10 0 0,0 60,32 Z" fill="${secondaryColor}"/>
                         </g>
                         <text class="jersey-number" x="50" y="66" fill="${secondaryColor}" font-size="24" font-family="var(--font-heading)" font-weight="900" text-anchor="middle">${escapedShirt}</text>
-                    </svg>
+                    </svg>`;
+
+            node.innerHTML = `
+                <div class="jersey-wrapper">
+                    ${avatarHTML}
                 </div>
                 <div class="player-node-label-container" style="margin-top: 3px; display: flex; flex-direction: column; align-items: center;">
                     <span class="player-node-label" style="font-size: 8px; padding: 1px 3.5px; white-space: nowrap; text-align: center;">${surname}</span>

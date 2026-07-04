@@ -416,10 +416,12 @@ export const updateConsoleDetails = (game) => {
 
         if (details?.HomeTeam?.Goals || details?.AwayTeam?.Goals) {
             (details.HomeTeam.Goals || []).forEach(g => {
+                if (String(g.Period) === "11") return; // Skip penalty shootout goals
                 const name = escapeHTML(getScorerName(details.HomeTeam, g.IdPlayer));
                 if (homeScorersList) homeScorersList.innerHTML += `<div>⚽ ${name} ${escapeHTML(g.Minute || "")}</div>`;
             });
             (details.AwayTeam.Goals || []).forEach(g => {
+                if (String(g.Period) === "11") return; // Skip penalty shootout goals
                 const name = escapeHTML(getScorerName(details.AwayTeam, g.IdPlayer));
                 if (awayScorersList) awayScorersList.innerHTML += `<div>⚽ ${name} ${escapeHTML(g.Minute || "")}</div>`;
             });

@@ -176,9 +176,14 @@ export const formatToIST = (localDateStr, stadiumId = null, gameId = null) => {
 export const normalizeTeamName = (name) => {
     if (!name) return "";
     const clean = name.trim();
-    if (clean === "United States") return "USA";
-    if (clean === "Czech Republic") return "Czechia";
-    if (clean === "Democratic Republic of the Congo") return "DR Congo";
+    if (clean === "United States" || clean === "USA") return "USA";
+    if (clean === "Czech Republic" || clean === "Czechia") return "Czechia";
+    if (clean === "Democratic Republic of the Congo" || clean === "Congo DR" || clean === "DR Congo") return "DR Congo";
+    if (clean === "Cabo Verde") return "Cape Verde";
+    if (clean === "IR Iran") return "Iran";
+    if (clean === "Korea Republic") return "South Korea";
+    if (clean === "Türkiye") return "Turkey";
+    if (clean === "Côte d'Ivoire") return "Ivory Coast";
     return clean;
 };
 
@@ -262,34 +267,50 @@ export const mapFifaMatch = (m) => {
     const home = m.HomeTeam || m.Home || {};
     const away = m.AwayTeam || m.Away || {};
 
-    const homeName = home.TeamName?.[0]?.Description || home.ShortClubName || "TBD";
-    const awayName = away.TeamName?.[0]?.Description || away.ShortClubName || "TBD";
+    const homeRawName = home.TeamName?.[0]?.Description || home.ShortClubName || "TBD";
+    const awayRawName = away.TeamName?.[0]?.Description || away.ShortClubName || "TBD";
+
+    const homeName = normalizeTeamName(homeRawName);
+    const awayName = normalizeTeamName(awayRawName);
 
     // Map stage
     let stage = "GROUP_STAGE";
-    const stageDesc = m.StageName?.Description || "";
-    if (stageDesc.includes("Round of 16")) stage = "ROUND_OF_16";
+    const stageDesc = m.StageName?.[0]?.Description || m.StageName?.Description || "";
+    if (stageDesc.includes("Round of 16") || stageDesc.includes("Round of 32")) stage = "ROUND_OF_16";
     else if (stageDesc.includes("Quarter-finals")) stage = "QUARTER_FINALS";
     else if (stageDesc.includes("Semi-finals")) stage = "SEMI_FINALS";
-    else if (stageDesc.includes("Play-off for third place")) stage = "THIRD_PLACE";
+    else if (stageDesc.includes("Play-off for third place") || stageDesc.includes("Third place")) stage = "THIRD_PLACE";
     else if (stageDesc.includes("Final")) stage = "FINAL";
 
     // Map group name
     let group = "";
-    const groupDesc = m.GroupName?.Description || "";
+    const groupDesc = m.GroupName?.[0]?.Description || m.GroupName?.Description || "";
     if (groupDesc.startsWith("Group ")) {
         group = groupDesc.toUpperCase().replace("GROUP ", "GROUP_");
     }
 
     // Map status
     let status = "TIMED";
-    if (m.Period === 10) {
-        status = "FINISHED";
-    } else if (m.Period === 6) {
-        status = "PAUSED";
-    } else if (m.Period > 0) {
-        status = "IN_PLAY";
+    const hasPeriod = m.Period !== undefined && m.Period !== null;
+    if (hasPeriod) {
+        if (m.Period === 10) {
+            status = "FINISHED";
+        } else if (m.Period === 6) {
+            status = "PAUSED";
+        } else if (m.Period > 0) {
+            status = "IN_PLAY";
+        }
+    } else {
+        if (m.MatchStatus === 0) {
+            status = "FINISHED";
+        } else if (m.MatchStatus === 3) {
+            status = "IN_PLAY";
+        } else if (m.MatchStatus === 6) {
+            status = "PAUSED";
+        }
     }
+
+    const isFinished = status === "FINISHED";
 
     const homeScore = home.Score !== null && home.Score !== undefined ? home.Score : null;
     const awayScore = away.Score !== null && away.Score !== undefined ? away.Score : null;
@@ -298,8 +319,8 @@ export const mapFifaMatch = (m) => {
         id: String(m.MatchNumber),
         fifaMatchId: String(m.IdMatch),
         status: status,
-        finished: m.Period === 10 ? "TRUE" : "FALSE",
-        time_elapsed: m.Period === 0 ? "notstarted" : (m.MatchTime ? m.MatchTime.replace("'", "") : "0"),
+        finished: isFinished ? "TRUE" : "FALSE",
+        time_elapsed: (m.Period === 0 || m.MatchStatus === 1) ? "notstarted" : (m.MatchTime ? m.MatchTime.replace("'", "") : "0"),
         homeTeam: {
             id: home.IdTeam,
             name: homeName
@@ -345,17 +366,26 @@ export const escapeHTML = (str) => {
 
 export const isMatchFinished = (game) => {
     if (!game) return false;
+    const details = state.currentSelectedMatchDetails;
+    if (details && String(details.IdMatch) === String(game.fifaMatchId || game.id)) {
+        if (details.Period === 10 || details.MatchStatus === 0) return true;
+    }
     return game.status === "FINISHED" || game.finished === "TRUE";
 };
 
 export const isMatchLive = (game) => {
     if (!game) return false;
+    const details = state.currentSelectedMatchDetails;
+    if (details && String(details.IdMatch) === String(game.fifaMatchId || game.id)) {
+        if (details.Period > 0 && details.Period !== 10) return true;
+        if (details.MatchStatus === 3 || details.MatchStatus === 6) return true;
+    }
     return game.status === "IN_PLAY" || game.status === "PAUSED";
 };
 
 export const isMatchUpcoming = (game) => {
     if (!game) return true;
-    return game.status === "TIMED" || game.status === "SCHEDULED" || game.time_elapsed === "notstarted";
+    return !isMatchFinished(game) && !isMatchLive(game);
 };
 
 export const getGameScore = (game) => {
