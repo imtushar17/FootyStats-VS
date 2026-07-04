@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getWcTeamFlagHTML, getStadiumName, formatToIST, getTeamData, normalizeTeamName } from './utils.js';
+import { getWcTeamFlagHTML, getStadiumName, formatToIST, getTeamData, normalizeTeamName, escapeHTML, isMatchFinished, isMatchLive, isMatchUpcoming, getGameScore, parseGameDate } from './utils.js';
 import { drawLineupPitch } from './lineups.js';
 
 export const drawPreMatchHub = (game) => {
@@ -14,7 +14,10 @@ export const drawPreMatchHub = (game) => {
     const rH = teamH.rankingPoints || 1400;
     const rA = teamA.rankingPoints || 1400;
     const totalR = rH + rA;
-    const drawPct = 26;
+    
+    // Dynamic draw percentage based on team ranking gap (draw probability decreases for unbalanced match)
+    const diff = Math.abs(rH - rA);
+    const drawPct = Math.max(18, Math.min(32, Math.round(30 - (diff / 100))));
     const remainingPct = 100 - drawPct;
     const homeWinPct = Math.round((rH / totalR) * remainingPct);
     const awayWinPct = 100 - drawPct - homeWinPct;
@@ -44,7 +47,7 @@ export const drawPreMatchHub = (game) => {
 
     const getWorldCupForm = (teamName) => {
         const playedGames = state.worldCupGames.filter(g => {
-            const isFinished = g.status === "FINISHED" || g.finished === "TRUE";
+            const isFinished = isMatchFinished(g);
             if (!isFinished) return false;
             
             const ghName = g.homeTeam?.name || g.home_team_name_en;
@@ -54,17 +57,7 @@ export const drawPreMatchHub = (game) => {
             const normTarget = normalizeTeamName(teamName);
             return normH === normTarget || normA === normTarget;
         }).sort((a, b) => {
-            const parseDate = (game) => {
-                if (game.utcDate) return new Date(game.utcDate).getTime();
-                if (game.local_date) {
-                    const [datePart, timePart] = game.local_date.split(" ");
-                    const [m, d, y] = datePart.split("/").map(Number);
-                    const [h, min] = timePart.split(":").map(Number);
-                    return new Date(y, m - 1, d, h, min).getTime();
-                }
-                return 0;
-            };
-            return parseDate(a) - parseDate(b);
+            return parseGameDate(a).getTime() - parseGameDate(b).getTime();
         });
 
         const pills = [];
@@ -81,15 +74,9 @@ export const drawPreMatchHub = (game) => {
             const normTarget = normalizeTeamName(teamName);
             const isHome = normH === normTarget;
 
-            let scoreHome = 0;
-            let scoreAway = 0;
-            if (g.score?.fullTime?.home !== null && g.score?.fullTime?.home !== undefined) {
-                scoreHome = g.score.fullTime.home;
-                scoreAway = g.score.fullTime.away;
-            } else {
-                scoreHome = parseInt(g.home_score) || 0;
-                scoreAway = parseInt(g.away_score) || 0;
-            }
+            const scoreVal = getGameScore(g);
+            const scoreHome = scoreVal.home !== null ? scoreVal.home : 0;
+            const scoreAway = scoreVal.away !== null ? scoreVal.away : 0;
 
             const goalsFor = isHome ? scoreHome : scoreAway;
             const goalsAgainst = isHome ? scoreAway : scoreHome;
@@ -111,13 +98,19 @@ export const drawPreMatchHub = (game) => {
                 if (penH !== null && penA !== null) {
                     const homeWonPen = penH > penA;
                     const targetWonPen = isHome ? homeWonPen : !homeWonPen;
-                    if (targetWonPen) {
-                        pills.push("w");
-                        wins++;
-                        points += 3;
+                    // If group stage, shootout wins are points-wise draws
+                    if (g.stage === "GROUP_STAGE") {
+                        pills.push("d");
+                        draws++;
+                        points += 1;
                     } else {
-                        pills.push("l");
-                        losses++;
+                        if (targetWonPen) {
+                            pills.push("w");
+                            wins++;
+                        } else {
+                            pills.push("l");
+                            losses++;
+                        }
                     }
                 } else {
                     pills.push("d");
@@ -164,6 +157,17 @@ export const drawPreMatchHub = (game) => {
         timeText = formatToIST(game.local_date, game.stadium_id, game.id).time;
     }
 
+    const displayT1 = escapeHTML(t1);
+    const displayT2 = escapeHTML(t2);
+    const displayStarH = escapeHTML(starH);
+    const displayStarA = escapeHTML(starA);
+    const displayPosH = escapeHTML(posH);
+    const displayPosA = escapeHTML(posA);
+    const displayDateText = escapeHTML(dateText);
+    const displayTimeText = escapeHTML(timeText);
+    const displayVenue = escapeHTML(getStadiumName(game.stadium_id));
+    const displayGroup = game.group ? escapeHTML(game.group.replace("GROUP_", "Group ")) : "Knockout";
+
     hub.innerHTML = `
         <div class="prematch-hub">
             <div class="prematch-section">
@@ -174,9 +178,9 @@ export const drawPreMatchHub = (game) => {
                     <div class="win-fill away" style="width: ${awayWinPct}%;">${awayWinPct}%</div>
                 </div>
                 <div class="win-labels-grid">
-                    <span class="win-label home">${t1} Win</span>
+                    <span class="win-label home">${displayT1} Win</span>
                     <span class="win-label draw">Draw</span>
-                    <span class="win-label away">${t2} Win</span>
+                    <span class="win-label away">${displayT2} Win</span>
                 </div>
             </div>
 
@@ -224,22 +228,22 @@ export const drawPreMatchHub = (game) => {
                 <div class="form-row">
                     <div class="form-team-info">
                         ${getWcTeamFlagHTML(t1, "standings-tbl-flag")}
-                        <span>${t1}</span>
+                        <span>${displayT1}</span>
                     </div>
                     <div class="form-pills">
-                        ${formH.pills.map(p => `<span class="form-pill ${p}">${p.toUpperCase()}</span>`).join('')}
+                        ${formH.pills.map(p => `<span class="form-pill ${p}">${escapeHTML(p.toUpperCase())}</span>`).join('')}
                     </div>
-                    <span class="form-stats-text">${formH.text}</span>
+                    <span class="form-stats-text">${escapeHTML(formH.text)}</span>
                 </div>
                 <div class="form-row">
                     <div class="form-team-info">
                         ${getWcTeamFlagHTML(t2, "standings-tbl-flag")}
-                        <span>${t2}</span>
+                        <span>${displayT2}</span>
                     </div>
                     <div class="form-pills">
-                        ${formA.pills.map(p => `<span class="form-pill ${p}">${p.toUpperCase()}</span>`).join('')}
+                        ${formA.pills.map(p => `<span class="form-pill ${p}">${escapeHTML(p.toUpperCase())}</span>`).join('')}
                     </div>
-                    <span class="form-stats-text">${formA.text}</span>
+                    <span class="form-stats-text">${escapeHTML(formA.text)}</span>
                 </div>
             </div>
 
@@ -248,14 +252,14 @@ export const drawPreMatchHub = (game) => {
                 <div class="matchup-cards-row">
                     <div class="matchup-card">
                         <span class="player-ovr">${ratingH}</span>
-                        <span class="player-name">${starH}</span>
-                        <span class="player-meta">${posH}</span>
+                        <span class="player-name">${displayStarH}</span>
+                        <span class="player-meta">${displayPosH}</span>
                     </div>
                     <span class="matchup-vs-badge">VS</span>
                     <div class="matchup-card">
                         <span class="player-ovr">${ratingA}</span>
-                        <span class="player-name">${starA}</span>
-                        <span class="player-meta">${posA}</span>
+                        <span class="player-name">${displayStarA}</span>
+                        <span class="player-meta">${displayPosA}</span>
                     </div>
                 </div>
             </div>
@@ -265,19 +269,19 @@ export const drawPreMatchHub = (game) => {
                 <div class="prematch-info-box">
                     <div class="info-item">
                         <span class="info-label">Venue Stadium</span>
-                        <span class="info-value">${getStadiumName(game.stadium_id)}</span>
+                        <span class="info-value">${displayVenue}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Group/Stage</span>
-                        <span class="info-value">${game.group ? game.group.replace("GROUP_", "Group ") : "Knockout"}</span>
+                        <span class="info-value">${displayGroup}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Scheduled Date</span>
-                        <span class="info-value">${dateText}</span>
+                        <span class="info-value">${displayDateText}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Scheduled Time</span>
-                        <span class="info-value">${timeText}</span>
+                        <span class="info-value">${displayTimeText}</span>
                     </div>
                 </div>
             </div>
@@ -348,17 +352,19 @@ export const updateConsoleDetails = (game) => {
     const hScoreEl = document.getElementById("console-home-score");
     const aScoreEl = document.getElementById("console-away-score");
 
+    const details = state.currentSelectedMatchDetails;
+
     if (stadiumEl) {
-        const venueStr = state.currentSelectedMatchDetails?.venue || getStadiumName(game.stadium_id);
-        const referees = state.currentSelectedMatchDetails?.referees || [];
-        const mainReferee = referees.find(r => r.role === "REFEREE")?.name || referees[0]?.name || "";
+        const venueStr = details?.Stadium?.Name?.[0]?.Description || details?.venue || getStadiumName(game.stadium_id);
+        const apiOfficials = details?.Officials || [];
+        const mainReferee = apiOfficials.find(o => o.OfficialType === 1)?.Name?.[0]?.Description || apiOfficials[0]?.Name?.[0]?.Description || "";
         stadiumEl.textContent = mainReferee ? `${venueStr} (Ref: ${mainReferee})` : venueStr;
     }
 
     if (groupEl) {
-        const groupText = game.group ? `Group ${game.group.replace("GROUP_", "")}` : "";
+        const groupText = game.group ? `Group ${game.group.replace("GROUP_", "")}` : (game.stage ? game.stage.replace(/_/g, " ") : "");
         let dateText = "";
-        const targetUtc = state.currentSelectedMatchDetails?.utcDate || game.utcDate;
+        const targetUtc = details?.utcDate || game.utcDate;
         if (targetUtc) {
             dateText = ` | Kickoff: ${new Date(targetUtc).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`;
         }
@@ -373,8 +379,8 @@ export const updateConsoleDetails = (game) => {
     if (aFlagEl) aFlagEl.innerHTML = getWcTeamFlagHTML(awayTeamDisplayName, "console-flag");
     if (aNameEl) aNameEl.textContent = awayTeamDisplayName;
 
-    const apiHomeScore = state.currentSelectedMatchDetails?.score?.fullTime?.home;
-    const apiAwayScore = state.currentSelectedMatchDetails?.score?.fullTime?.away;
+    const apiHomeScore = details?.score?.fullTime?.home !== undefined ? details.score.fullTime.home : details?.HomeTeam?.Score;
+    const apiAwayScore = details?.score?.fullTime?.away !== undefined ? details.score.fullTime.away : details?.AwayTeam?.Score;
     const displayHomeScore = apiHomeScore !== null && apiHomeScore !== undefined ? apiHomeScore : (liveState ? liveState.scoreHome : "-");
     const displayAwayScore = apiAwayScore !== null && apiAwayScore !== undefined ? apiAwayScore : (liveState ? liveState.scoreAway : "-");
 
@@ -384,7 +390,7 @@ export const updateConsoleDetails = (game) => {
     const timeEl = document.getElementById("console-time");
     if (timeEl) {
         timeEl.className = "console-time-elapsed";
-        const status = state.currentSelectedMatchDetails?.status || game.status;
+        const status = details?.status || game.status;
         if (status === "FINISHED") {
             timeEl.textContent = "Finished";
             timeEl.classList.add("status-finished");
@@ -403,35 +409,41 @@ export const updateConsoleDetails = (game) => {
     if (awayScorersList) awayScorersList.innerHTML = "";
 
     try {
-        const events = state.currentSelectedMatchDetails?.events || [];
-        const goalEvents = events.filter(e => e.type === "GOAL");
-        if (goalEvents.length > 0) {
-            goalEvents.forEach(evt => {
-                const scorerName = evt.player?.name || "Goal";
-                const min = evt.minute || "";
-                const isHome = evt.team?.id === state.currentSelectedMatchDetails?.homeTeam?.id;
-                const list = isHome ? homeScorersList : awayScorersList;
-                if (list) list.innerHTML += `<div>${scorerName} ${min}'</div>`;
+        const getScorerName = (team, idPlayer) => {
+            const p = team?.Players?.find(pl => String(pl.IdPlayer) === String(idPlayer));
+            return p?.PlayerName?.[0]?.Description || "Goal";
+        };
+
+        if (details?.HomeTeam?.Goals || details?.AwayTeam?.Goals) {
+            (details.HomeTeam.Goals || []).forEach(g => {
+                const name = escapeHTML(getScorerName(details.HomeTeam, g.IdPlayer));
+                if (homeScorersList) homeScorersList.innerHTML += `<div>⚽ ${name} ${escapeHTML(g.Minute || "")}</div>`;
+            });
+            (details.AwayTeam.Goals || []).forEach(g => {
+                const name = escapeHTML(getScorerName(details.AwayTeam, g.IdPlayer));
+                if (awayScorersList) awayScorersList.innerHTML += `<div>⚽ ${name} ${escapeHTML(g.Minute || "")}</div>`;
             });
         } else {
             if (game.home_scorers && game.home_scorers !== "null") {
                 const array = game.home_scorers.startsWith("{") ? JSON.parse(game.home_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.home_scorers];
                 array.forEach(s => {
-                    if (homeScorersList) homeScorersList.innerHTML += `<div>${s}</div>`;
+                    if (homeScorersList) homeScorersList.innerHTML += `<div>${escapeHTML(s)}</div>`;
                 });
             }
             if (game.away_scorers && game.away_scorers !== "null") {
                 const array = game.away_scorers.startsWith("{") ? JSON.parse(game.away_scorers.replace(/“|”/g, '"').replace(/{/g, '[').replace(/}/g, ']')) : [game.away_scorers];
                 array.forEach(s => {
-                    if (awayScorersList) awayScorersList.innerHTML += `<div>${s}</div>`;
+                    if (awayScorersList) awayScorersList.innerHTML += `<div>${escapeHTML(s)}</div>`;
                 });
             }
         }
     } catch (e) {
-        console.warn("Error rendering scorers list:", e);
+        console.error("Failed to parse goals:", e.message);
     }
 
     const statsGrid = document.getElementById("console-stats-grid");
+    const timelineEvents = details?.timelineEvents || [];
+
     if (statsGrid) {
         statsGrid.innerHTML = "";
 
@@ -461,44 +473,64 @@ export const updateConsoleDetails = (game) => {
             `;
         };
 
-        const homePossession = liveState.stats?.possession || 50;
-        const awayPossession = 100 - homePossession;
+        const homeTeamId = details?.HomeTeam?.IdTeam || game.homeTeam?.id;
+        const awayTeamId = details?.AwayTeam?.IdTeam || game.awayTeam?.id;
 
-        statsGrid.innerHTML = `
-            ${buildConsoleStatBar("Possession", `${homePossession}%`, `${awayPossession}%`)}
-            ${buildConsoleStatBar("Shots", liveState.stats?.shotsHome || 0, liveState.stats?.shotsAway || 0)}
-            ${buildConsoleStatBar("Shots on Target", liveState.stats?.shotsOnTargetHome || 0, liveState.stats?.shotsOnTargetAway || 0)}
-            ${buildConsoleStatBar("Fouls", liveState.stats?.foulsHome || 0, liveState.stats?.foulsAway || 0)}
-            ${buildConsoleStatBar("Goalkeeper Saves", liveState.stats?.savesHome || 0, liveState.stats?.savesAway || 0)}
-            ${buildConsoleStatBar("Corners", liveState.stats?.cornersHome || 0, liveState.stats?.cornersAway || 0)}
-        `;
+        if (timelineEvents.length > 0 && homeTeamId && awayTeamId) {
+            const countEventType = (typeCode, teamId) => {
+                return timelineEvents.filter(e => e.Type === typeCode && String(e.IdTeam) === String(teamId)).length;
+            };
+
+            const shotsH = countEventType(12, homeTeamId);
+            const shotsA = countEventType(12, awayTeamId);
+            const cornersH = countEventType(16, homeTeamId);
+            const cornersA = countEventType(16, awayTeamId);
+            const foulsH = countEventType(18, homeTeamId);
+            const foulsA = countEventType(18, awayTeamId);
+            const savesH = countEventType(57, homeTeamId);
+            const savesA = countEventType(57, awayTeamId);
+
+            statsGrid.innerHTML = `
+                ${buildConsoleStatBar("Shots", shotsH, shotsA)}
+                ${buildConsoleStatBar("Corners", cornersH, cornersA)}
+                ${buildConsoleStatBar("Fouls", foulsH, foulsA)}
+                ${buildConsoleStatBar("Saves", savesH, savesA)}
+            `;
+        } else if (liveState && liveState.stats) {
+            const homePossession = liveState.stats.possession || 50;
+            const awayPossession = 100 - homePossession;
+            statsGrid.innerHTML = `
+                ${buildConsoleStatBar("Possession", `${homePossession}%`, `${awayPossession}%`)}
+                ${buildConsoleStatBar("Shots", liveState.stats.shotsHome || 0, liveState.stats.shotsAway || 0)}
+                ${buildConsoleStatBar("Shots on Target", liveState.stats.shotsOnTargetHome || 0, liveState.stats.shotsOnTargetAway || 0)}
+                ${buildConsoleStatBar("Fouls", liveState.stats.foulsHome || 0, liveState.stats.foulsAway || 0)}
+                ${buildConsoleStatBar("Goalkeeper Saves", liveState.stats.savesHome || 0, liveState.stats.savesAway || 0)}
+                ${buildConsoleStatBar("Corners", liveState.stats.cornersHome || 0, liveState.stats.cornersAway || 0)}
+            `;
+        }
     }
 
     const timelineLog = document.getElementById("console-timeline-log");
     if (timelineLog) {
         timelineLog.innerHTML = "";
 
-        const events = state.currentSelectedMatchDetails?.events || [];
-        if (events.length > 0) {
-            const sortedEvents = [...events].sort((a, b) => (a.minute || 0) - (b.minute || 0));
-            sortedEvents.forEach(evt => {
+        if (timelineEvents.length > 0) {
+            timelineEvents.forEach(evt => {
                 let icon = "❓";
-                const typeText = evt.type || "";
-                if (typeText.includes("GOAL")) icon = "⚽";
-                else if (typeText.includes("YELLOW")) icon = "🟨";
-                else if (typeText.includes("RED")) icon = "🟥";
-                else if (typeText.includes("SUBST")) icon = "🔄";
+                const typeCode = evt.Type;
+                if (typeCode === 0) icon = "⚽";
+                else if (typeCode === 2) icon = "🟨";
+                else if (typeCode === 3 || typeCode === 9) icon = "🟥";
+                else if (typeCode === 5) icon = "🔄";
                 
-                const teamName = evt.team?.name || "";
-                const playerName = evt.player?.name || "Player";
-                const desc = `<strong>${typeText.replace(/_/g, " ")}</strong> - ${playerName} (${teamName})`;
+                const desc = evt.EventDescription?.[0]?.Description || "Match event";
 
                 const evCard = document.createElement("div");
                 evCard.className = "timeline-event-card";
                 evCard.innerHTML = `
-                    <span class="t-event-time">${evt.minute || 0}'</span>
+                    <span class="t-event-time">${escapeHTML(evt.MatchMinute || "0'")}</span>
                     <span class="t-event-icon">${icon}</span>
-                    <span class="t-event-desc">${desc}</span>
+                    <span class="t-event-desc">${escapeHTML(desc)}</span>
                 `;
                 timelineLog.appendChild(evCard);
             });
@@ -509,9 +541,9 @@ export const updateConsoleDetails = (game) => {
                     const evCard = document.createElement("div");
                     evCard.className = "timeline-event-card";
                     evCard.innerHTML = `
-                        <span class="t-event-time">${event.min}'</span>
+                        <span class="t-event-time">${escapeHTML(event.min)}'</span>
                         <span class="t-event-icon">${event.icon}</span>
-                        <span class="t-event-desc">${event.desc}</span>
+                        <span class="t-event-desc">${escapeHTML(event.desc)}</span>
                     `;
                     timelineLog.appendChild(evCard);
                 });

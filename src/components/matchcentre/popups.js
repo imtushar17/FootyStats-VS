@@ -1,7 +1,7 @@
 import { state } from './state.js';
-import { getWcTeamFlagHTML, getStadiumName, formatToIST, getTeamData } from './utils.js';
+import { getWcTeamFlagHTML, getStadiumName, formatToIST, getTeamData, escapeHTML, isMatchFinished, isMatchLive, isMatchUpcoming, getGameScore } from './utils.js';
 import { closeExplorer, closeBracket, closeGroups } from './explorer.js';
-import { fetchMatchDetails } from './api.js';
+import { fetchMatchDetails, fetchMatchTimeline } from './api.js';
 
 let selectLiveMatchCallback = null;
 
@@ -14,43 +14,26 @@ export const closeMatchDetail = () => {
 };
 
 const getScorersHTML = (game, hName, aName) => {
-    // Primary source: live API goals array from the deep match fetch
-    const apiGoals = state.currentSelectedMatchDetails?.goals || [];
+    const getScorerName = (team, idPlayer) => {
+        const p = team?.Players?.find(pl => String(pl.IdPlayer) === String(idPlayer));
+        return p?.PlayerName?.[0]?.Description || "Goal";
+    };
 
-    // Determine which team is home/away from the detail object for matching
-    const homeTeamId = state.currentSelectedMatchDetails?.homeTeam?.id || game.homeTeam?.id;
-    const awayTeamId = state.currentSelectedMatchDetails?.awayTeam?.id || game.awayTeam?.id;
-
+    const details = state.currentSelectedMatchDetails;
     let homeGoals = [];
     let awayGoals = [];
 
-    if (apiGoals.length > 0) {
-        apiGoals.forEach(goal => {
-            const scorerName = goal.scorer?.name || goal.player?.name || "Goal";
-            const minute = goal.minute ? `${goal.minute}'` : "";
-            const minuteExtra = goal.injuryTime ? `+${goal.injuryTime}` : "";
-            const minuteStr = minute ? `${goal.minute}${minuteExtra ? '+'+goal.injuryTime : ''}'` : "";
-            const label = `${scorerName}${minuteStr ? ' ' + minuteStr : ''}`;
-
-            const teamId = goal.team?.id;
-            if (teamId === homeTeamId) {
-                homeGoals.push(label);
-            } else if (teamId === awayTeamId) {
-                awayGoals.push(label);
-            } else {
-                // Fallback: try to match by team name
-                const goalTeamName = goal.team?.name || "";
-                const normGoalTeam = goalTeamName.toLowerCase();
-                const normHome = hName.toLowerCase();
-                if (normGoalTeam && normHome && normGoalTeam.includes(normHome.split(" ")[0])) {
-                    homeGoals.push(label);
-                } else {
-                    awayGoals.push(label);
-                }
-            }
+    if (details?.HomeTeam?.Goals || details?.AwayTeam?.Goals) {
+        homeGoals = (details.HomeTeam.Goals || []).map(g => {
+            const name = escapeHTML(getScorerName(details.HomeTeam, g.IdPlayer));
+            return `${name} ${escapeHTML(g.Minute || "")}`;
+        });
+        awayGoals = (details.AwayTeam.Goals || []).map(g => {
+            const name = escapeHTML(getScorerName(details.AwayTeam, g.IdPlayer));
+            return `${name} ${escapeHTML(g.Minute || "")}`;
         });
     } else {
-        // Legacy fallback for static data (old JSON format)
+        // Fallback: legacy static data
         const parseScorers = (scorersStr) => {
             if (!scorersStr || scorersStr === "null") return [];
             try {
@@ -62,10 +45,9 @@ const getScorersHTML = (game, hName, aName) => {
                 return [String(scorersStr).replace(/[{}"]/g, "")];
             }
         };
-        homeGoals = parseScorers(game.home_scorers);
-        awayGoals = parseScorers(game.away_scorers);
+        homeGoals = parseScorers(game.home_scorers).map(escapeHTML);
+        awayGoals = parseScorers(game.away_scorers).map(escapeHTML);
 
-        // Pad with generic Goal labels if score > scorer count
         const liveState = state.liveStates[game.id];
         const scoreHome = liveState ? liveState.scoreHome : (parseInt(game.home_score) || 0);
         const scoreAway = liveState ? liveState.scoreAway : (parseInt(game.away_score) || 0);
@@ -122,10 +104,26 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
     let starters = [];
     let bench = [];
     let formationText = "N/A";
+    let isEstimated = false;
 
-    const apiLineup = isAway ? state.currentSelectedMatchDetails?.awayTeam?.lineup : state.currentSelectedMatchDetails?.homeTeam?.lineup;
-    const apiBench = isAway ? state.currentSelectedMatchDetails?.awayTeam?.bench : state.currentSelectedMatchDetails?.homeTeam?.bench;
-    const apiFormation = isAway ? state.currentSelectedMatchDetails?.awayTeam?.formation : state.currentSelectedMatchDetails?.homeTeam?.formation;
+    const activeTeamObj = isAway ? state.currentSelectedMatchDetails?.AwayTeam : state.currentSelectedMatchDetails?.HomeTeam;
+    const apiPlayers = activeTeamObj?.Players || [];
+    const hasApiLineup = apiPlayers.length > 0;
+
+    let apiLineup = [];
+    let apiBench = [];
+    let apiFormation = "";
+
+    if (hasApiLineup) {
+        apiLineup = apiPlayers.filter(p => p.Status === 1);
+        apiBench = apiPlayers.filter(p => p.Status === 2);
+        apiFormation = activeTeamObj.Tactics || "";
+    } else {
+        // Fallback to legacy fields if the old structure is populated
+        apiLineup = isAway ? state.currentSelectedMatchDetails?.awayTeam?.lineup : state.currentSelectedMatchDetails?.homeTeam?.lineup;
+        apiBench = isAway ? state.currentSelectedMatchDetails?.awayTeam?.bench : state.currentSelectedMatchDetails?.homeTeam?.bench;
+        apiFormation = isAway ? state.currentSelectedMatchDetails?.awayTeam?.formation : state.currentSelectedMatchDetails?.homeTeam?.formation;
+    }
 
     const drawStartersOnPitch = () => {
         const gkList = starters.filter(p => p.pos === "GK");
@@ -138,12 +136,17 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
         }
 
         const teamDataObj = getTeamData(teamName);
-        const coachName = getCoachName(teamName, isAway ? state.currentSelectedMatchDetails?.awayTeam?.coach?.name : state.currentSelectedMatchDetails?.homeTeam?.coach?.name);
+        const apiCoach = activeTeamObj?.Coaches?.find(c => c.Role === 0)?.Name?.[0]?.Description || activeTeamObj?.Coaches?.[0]?.Name?.[0]?.Description || "";
+        const coachName = getCoachName(teamName, apiCoach || (isAway ? state.currentSelectedMatchDetails?.awayTeam?.coach?.name : state.currentSelectedMatchDetails?.homeTeam?.coach?.name));
+
+        const displayTeamName = escapeHTML(teamName);
+        const displayFormation = escapeHTML(formationText);
+        const displayCoachName = escapeHTML(coachName);
 
         container.innerHTML = `
             <div class="active-tactics-meta" style="text-align: center; margin-bottom: 6px;">
-                <h4 style="margin: 0; font-size: 11.5px; font-weight: 800; color: var(--text-light);">${teamName} Starting XI</h4>
-                <p style="margin: 2px 0 0 0; font-size: 9.5px; color: var(--text-muted);">Formation: <strong>${formationText}</strong> | Coach: ${coachName}</p>
+                <h4 style="margin: 0; font-size: 11.5px; font-weight: 800; color: var(--text-light);">${displayTeamName} Starting XI ${isEstimated ? '<span class="console-badge font-est" style="font-size: 8px; padding: 1px 4px; background: rgba(234,179,8,0.15); color: #eab308; border-radius: 4px; margin-left: 4px;">ESTIMATED</span>' : ''}</h4>
+                <p style="margin: 2px 0 0 0; font-size: 9.5px; color: var(--text-muted);">Formation: <strong>${displayFormation}</strong> | Coach: ${displayCoachName}</p>
             </div>
             <div class="soccer-pitch" style="margin-top: 6px;">
                 <div class="pitch-penalty-area left-area"></div>
@@ -173,30 +176,33 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
             node.style.top = `${topPct}%`;
             
             const safePlayerId = player.name.replace(/\s+/g, '-').toLowerCase();
+            const escapedName = escapeHTML(player.name);
+            const escapedShirt = escapeHTML(player.shirt);
+            const surname = escapeHTML(player.name.split(" ").pop());
 
             node.innerHTML = `
                 <div class="jersey-wrapper">
                     <svg class="player-jersey-svg" viewBox="0 0 100 100">
-                        <filter id="popup-jersey-shadow-${safePlayerId}" x="-15%" y="-15%" width="130%" height="130%">
+                        <filter id="popup-jersey-shadow-${escapeHTML(safePlayerId)}" x="-15%" y="-15%" width="130%" height="130%">
                             <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-opacity="0.35"/>
                         </filter>
                         <defs>
-                            <linearGradient id="popup-jersey-grad-${safePlayerId}" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <linearGradient id="popup-jersey-grad-${escapeHTML(safePlayerId)}" x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" stop-color="${primaryColor}"/>
                                 <stop offset="100%" stop-color="color-mix(in srgb, ${primaryColor} 65%, #000000)"/>
                             </linearGradient>
                         </defs>
-                        <g filter="url(#popup-jersey-shadow-${safePlayerId})">
+                        <g filter="url(#popup-jersey-shadow-${escapeHTML(safePlayerId)})">
                             <path d="M 12,38 L 28,22 L 40,32 L 28,50 Z" fill="${primaryColor}" stroke="${secondaryColor}" stroke-width="2.5"/>
                             <path d="M 88,38 L 72,22 L 60,32 L 72,50 Z" fill="${primaryColor}" stroke="${secondaryColor}" stroke-width="2.5"/>
-                            <path d="M 28,32 L 72,32 L 72,88 L 28,88 Z" fill="url(#popup-jersey-grad-${safePlayerId})" stroke="${secondaryColor}" stroke-width="3" stroke-linejoin="round"/>
+                            <path d="M 28,32 L 72,32 L 72,88 L 28,88 Z" fill="url(#popup-jersey-grad-${escapeHTML(safePlayerId)})" stroke="${secondaryColor}" stroke-width="3" stroke-linejoin="round"/>
                             <path d="M 40,32 A 10,10 0 0,0 60,32 Z" fill="${secondaryColor}"/>
                         </g>
-                        <text class="jersey-number" x="50" y="66" fill="${secondaryColor}" font-size="24" font-family="var(--font-heading)" font-weight="900" text-anchor="middle">${player.shirt}</text>
+                        <text class="jersey-number" x="50" y="66" fill="${secondaryColor}" font-size="24" font-family="var(--font-heading)" font-weight="900" text-anchor="middle">${escapedShirt}</text>
                     </svg>
                 </div>
                 <div class="player-node-label-container" style="margin-top: 3px; display: flex; flex-direction: column; align-items: center;">
-                    <span class="player-node-label" style="font-size: 8px; padding: 1px 3.5px; white-space: nowrap; text-align: center;">${player.name.split(" ").pop()}</span>
+                    <span class="player-node-label" style="font-size: 8px; padding: 1px 3.5px; white-space: nowrap; text-align: center;">${surname}</span>
                 </div>
             `;
             jerseysContainer.appendChild(node);
@@ -223,17 +229,48 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
         });
     };
 
+    const drawBenchList = () => {
+        const benchContainer = container.parentElement?.querySelector(".popup-bench-container");
+        if (benchContainer) {
+            benchContainer.innerHTML = "";
+            if (bench.length > 0) {
+                benchContainer.innerHTML = `
+                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">Substitutes Bench</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; overflow-y: auto; max-height: 12vh;">
+                        ${bench.map(p => `
+                            <div style="font-size: 10px; color: var(--text-main); display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                                <span style="color: #10b981; font-weight: 800;">#${escapeHTML(p.shirt || "-")}</span>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">${escapeHTML(p.name)}</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                `;
+            }
+        }
+    };
+
     if (apiLineup && apiLineup.length > 0) {
-        starters = apiLineup.map(p => ({
-            name: p.name || "Player",
-            shirt: p.shirtNumber || p.shirt || "-",
-            pos: getPositionCategory(p.position || p.pos)
-        }));
-        bench = apiBench || [];
+        starters = apiLineup.map(p => {
+            const nameDesc = p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.name || "Player";
+            return {
+                name: nameDesc,
+                shirt: p.ShirtNumber || p.shirtNumber || p.shirt || "-",
+                pos: getPositionCategory(p.Position !== undefined ? String(p.Position) : (p.position || p.pos))
+            };
+        });
+        bench = apiBench.map(p => {
+            const nameDesc = p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.name || "Player";
+            return {
+                name: nameDesc,
+                shirt: p.ShirtNumber || p.shirtNumber || p.shirt || "-"
+            };
+        });
         formationText = apiFormation || "";
         drawStartersOnPitch();
+        drawBenchList();
     } else {
         // Fallback to static starting XI
+        isEstimated = true;
         import('../../data/lineups.js').then(m => {
             const staticStarters = m.getStartingXI(teamName);
             if (staticStarters && staticStarters.length > 0) {
@@ -242,37 +279,17 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
                     shirt: p.shirt,
                     pos: p.pos
                 }));
-                // Try to infer formation
                 const defs = starters.filter(p => p.pos === "DEF").length;
                 const mids = starters.filter(p => p.pos === "MID").length;
                 const fwds = starters.filter(p => p.pos === "FWD" || p.pos === "ST").length;
                 formationText = `${defs}-${mids}-${fwds}`;
             }
             drawStartersOnPitch();
+            drawBenchList();
         }).catch(e => {
             console.error("Error loading fallback lineups:", e);
-            container.innerHTML = `<div class="popup-lineups-announcement">Lineups for ${teamName} are currently not available.</div>`;
+            container.innerHTML = `<div class="popup-lineups-announcement">Lineups for ${escapeHTML(teamName)} are currently not available.</div>`;
         });
-        return;
-    }
-
-    // Renders the bench players list underneath the pitch!
-    const benchContainer = container.parentElement?.querySelector(".popup-bench-container");
-    if (benchContainer) {
-        benchContainer.innerHTML = "";
-        if (bench.length > 0) {
-            benchContainer.innerHTML = `
-                <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">Substitutes Bench</div>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; overflow-y: auto; max-height: 12vh;">
-                    ${bench.map(p => `
-                        <div style="font-size: 10px; color: var(--text-main); display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: rgba(255,255,255,0.02); border-radius: 4px;">
-                            <span style="color: #10b981; font-weight: 800;">#${p.shirtNumber || "-"}</span>
-                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">${p.name}</span>
-                        </div>
-                    `).join("")}
-                </div>
-            `;
-        }
     }
 };
 
@@ -282,6 +299,10 @@ export const openMatchDetailPopup = async (game) => {
     if (!popup || !body) return;
 
     popup.classList.add("open");
+
+    // Track active request ID to prevent race conditions
+    const currentRequestMatchId = game.id;
+    state.activePopupMatchId = game.id;
 
     // Show loading spinner
     body.innerHTML = `
@@ -293,29 +314,24 @@ export const openMatchDetailPopup = async (game) => {
 
     // Fetch deep match details asynchronously from proxy API
     await fetchMatchDetails(game.id);
+    const timelineData = await fetchMatchTimeline(game.id);
+    const timelineEvents = timelineData?.Event || [];
+
+    // Guard: Check if the user has navigated to another match popup since the fetches started
+    if (state.activePopupMatchId !== currentRequestMatchId) {
+        console.log(`Discarding stale details fetch for match ${currentRequestMatchId}.`);
+        return;
+    }
 
     const liveState = state.liveStates[game.id];
-    let scoreHome = game.home_score;
-    let scoreAway = game.away_score;
-    let isLive = game.finished === "FALSE" && game.time_elapsed !== "notstarted";
-    let isFinished = game.finished === "TRUE";
+    const scoreVal = getGameScore(game);
+    const scoreHome = scoreVal.home;
+    const scoreAway = scoreVal.away;
+    const isLive = isMatchLive(game);
+    const isFinished = isMatchFinished(game);
 
-    if (liveState) {
-        scoreHome = liveState.scoreHome;
-        scoreAway = liveState.scoreAway;
-        isLive = !liveState.finished && game.finished === "FALSE" && game.time_elapsed !== "notstarted";
-        isFinished = liveState.finished;
-    }
-
-    if (game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined) {
-        scoreHome = game.score.fullTime.home;
-        scoreAway = game.score.fullTime.away;
-        isFinished = game.status === "FINISHED";
-        isLive = game.status === "IN_PLAY" || game.status === "PAUSED";
-    }
-
-    const scoreText = (isLive || isFinished) ? `${scoreHome} - ${scoreAway}` : "vs";
-    const statusText = isLive ? `Live - ${liveState ? liveState.minute : game.time_elapsed}'` : isFinished ? "Finished" : "Upcoming";
+    const scoreText = (isLive || isFinished) ? `${escapeHTML(scoreHome)} - ${escapeHTML(scoreAway)}` : "vs";
+    const statusText = isLive ? (liveState ? `Live - ${escapeHTML(liveState.minute)}'` : "Live") : isFinished ? "Finished" : "Upcoming";
 
     let dateStr = "";
     if (game.utcDate) {
@@ -324,6 +340,7 @@ export const openMatchDetailPopup = async (game) => {
         const istTime = formatToIST(game.local_date, game.stadium_id, game.id);
         dateStr = istTime.full;
     }
+    dateStr = escapeHTML(dateStr);
 
     const hasPenalties = game.home_penalty_score !== undefined && 
                          game.home_penalty_score !== null && 
@@ -335,18 +352,18 @@ export const openMatchDetailPopup = async (game) => {
                          game.away_penalty_score !== "null";
     let penaltiesHTML = "";
     if (hasPenalties) {
-        const homePenaltyScorers = parseList(game.home_penalty_scorers);
-        const awayPenaltyScorers = parseList(game.away_penalty_scorers);
-        const homePenaltyMisses = parseList(game.home_penalty_misses);
-        const awayPenaltyMisses = parseList(game.away_penalty_misses);
+        const homePenaltyScorers = parseList(game.home_penalty_scorers).map(escapeHTML);
+        const awayPenaltyScorers = parseList(game.away_penalty_scorers).map(escapeHTML);
+        const homePenaltyMisses = parseList(game.home_penalty_misses).map(escapeHTML);
+        const awayPenaltyMisses = parseList(game.away_penalty_misses).map(escapeHTML);
 
         penaltiesHTML = `
             <div class="popup-scorers-box" style="margin-top: 8px;">
-                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #ef4444; margin-bottom: 6px; text-align: center;">Penalty Shootout (${game.home_penalty_score} - ${game.away_penalty_score})</div>
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #ef4444; margin-bottom: 6px; text-align: center;">Penalty Shootout (${escapeHTML(game.home_penalty_score)} - ${escapeHTML(game.away_penalty_score)})</div>
                 <div style="font-size: 10.5px; color: var(--text-main); line-height: 1.5; text-align: center;">
-                    <strong>${game.home_team_name_en}</strong>: ${homePenaltyScorers.length ? homePenaltyScorers.join(", ") : "None"} ${homePenaltyMisses.length ? `<span style="color: var(--text-muted);">(Missed: ${homePenaltyMisses.join(", ")})</span>` : ""}
+                    <strong>${escapeHTML(game.home_team_name_en)}</strong>: ${homePenaltyScorers.length ? homePenaltyScorers.join(", ") : "None"} ${homePenaltyMisses.length ? `<span style="color: var(--text-muted);">(Missed: ${homePenaltyMisses.join(", ")})</span>` : ""}
                     <br>
-                    <strong>${game.away_team_name_en}</strong>: ${awayPenaltyScorers.length ? awayPenaltyScorers.join(", ") : "None"} ${awayPenaltyMisses.length ? `<span style="color: var(--text-muted);">(Missed: ${awayPenaltyMisses.join(", ")})</span>` : ""}
+                    <strong>${escapeHTML(game.away_team_name_en)}</strong>: ${awayPenaltyScorers.length ? awayPenaltyScorers.join(", ") : "None"} ${awayPenaltyMisses.length ? `<span style="color: var(--text-muted);">(Missed: ${awayPenaltyMisses.join(", ")})</span>` : ""}
                 </div>
             </div>
         `;
@@ -354,15 +371,20 @@ export const openMatchDetailPopup = async (game) => {
 
     const hName = game.homeTeam?.name || game.home_team_name_en || "TBD";
     const aName = game.awayTeam?.name || game.away_team_name_en || "TBD";
-    const referees = state.currentSelectedMatchDetails?.referees || [];
-    const refereeName = referees.find(r => r.role === "REFEREE")?.name || referees[0]?.name || "";
+    
+    const apiOfficials = state.currentSelectedMatchDetails?.Officials || [];
+    const refereeName = apiOfficials.find(o => o.OfficialType === 1)?.Name?.[0]?.Description || apiOfficials[0]?.Name?.[0]?.Description || "";
+
+    const displayHName = escapeHTML(hName);
+    const displayAName = escapeHTML(aName);
+    const displayRefereeName = escapeHTML(refereeName);
 
     // Generate Layout
     const scoreboardHTML = `
         <div class="popup-scoreboard" style="margin-bottom: 12px;">
             <div class="popup-team">
                 ${getWcTeamFlagHTML(hName, "popup-team-flag")}
-                <span class="popup-team-name">${hName}</span>
+                <span class="popup-team-name">${displayHName}</span>
             </div>
             <div class="popup-score-box">
                 <span class="popup-score-text">${scoreText}</span>
@@ -370,7 +392,7 @@ export const openMatchDetailPopup = async (game) => {
             </div>
             <div class="popup-team">
                 ${getWcTeamFlagHTML(aName, "popup-team-flag")}
-                <span class="popup-team-name">${aName}</span>
+                <span class="popup-team-name">${displayAName}</span>
             </div>
         </div>
     `;
@@ -378,11 +400,16 @@ export const openMatchDetailPopup = async (game) => {
     const tabsNavHTML = `
         <div class="popup-tabs-nav">
             <button type="button" class="popup-tab-btn active" data-tab="overview">Overview</button>
-            <button type="button" class="popup-tab-btn" data-tab="home-lineup">Lineup: ${hName.split(" ").pop()}</button>
-            <button type="button" class="popup-tab-btn" data-tab="away-lineup">Lineup: ${aName.split(" ").pop()}</button>
+            <button type="button" class="popup-tab-btn" data-tab="home-lineup">Lineup: ${escapeHTML(hName.split(" ").pop())}</button>
+            <button type="button" class="popup-tab-btn" data-tab="away-lineup">Lineup: ${escapeHTML(aName.split(" ").pop())}</button>
             <button type="button" class="popup-tab-btn" data-tab="stats-events">Events & Stats</button>
         </div>
     `;
+
+    const stageLabel = game.group ? `Group ${game.group.replace("GROUP_", "")}` : (game.stage ? game.stage.replace(/_/g, " ") : "Knockout");
+    const displayStageLabel = escapeHTML(stageLabel);
+    const venueName = state.currentSelectedMatchDetails?.Stadium?.Name?.[0]?.Description || getStadiumName(game.stadium_id || game.stadium);
+    const displayVenueName = escapeHTML(venueName);
 
     const overviewHTML = `
         <div class="popup-tab-content active" id="popup-tab-overview">
@@ -394,10 +421,10 @@ export const openMatchDetailPopup = async (game) => {
             </div>
             ${penaltiesHTML}
             <div style="font-size: 10.5px; color: var(--text-muted); text-align: center; margin-top: 12px; line-height: 1.4; border-top: 1px solid var(--border-color); padding-top: 10px;">
-                🏟️ <strong>Stadium:</strong> ${state.currentSelectedMatchDetails?.venue || getStadiumName(game.stadium_id || game.stadium)}<br>
+                🏟️ <strong>Stadium:</strong> ${displayVenueName}<br>
                 📅 <strong>Scheduled Date:</strong> ${dateStr}<br>
-                🚩 <strong>Stage:</strong> Group ${game.group ? game.group.replace("GROUP_", "") : "Knockout"}<br>
-                ${refereeName ? `⚖️ <strong>Referee:</strong> ${refereeName}` : ""}
+                🚩 <strong>Stage:</strong> ${displayStageLabel}<br>
+                ${displayRefereeName ? `⚖️ <strong>Referee:</strong> ${displayRefereeName}` : ""}
             </div>
         </div>
     `;
@@ -454,30 +481,24 @@ export const openMatchDetailPopup = async (game) => {
     const statsWrapper = body.querySelector("#popup-stats-wrapper");
 
     // Chronological Events
-    const events = state.currentSelectedMatchDetails?.events || [];
     if (eventsListEl) {
-        if (events.length > 0) {
-            const sortedEvents = [...events].sort((a, b) => (a.minute || 0) - (b.minute || 0));
-            sortedEvents.forEach(evt => {
+        if (timelineEvents.length > 0) {
+            timelineEvents.forEach(evt => {
                 let icon = "❓";
-                const typeText = evt.type || "";
-                if (typeText.includes("GOAL")) icon = "⚽";
-                else if (typeText.includes("YELLOW")) icon = "🟨";
-                else if (typeText.includes("RED")) icon = "🟥";
-                else if (typeText.includes("SUBST")) icon = "🔄";
+                const typeCode = evt.Type;
+                if (typeCode === 0) icon = "⚽"; // Goal
+                else if (typeCode === 2) icon = "🟨"; // Yellow card
+                else if (typeCode === 3 || typeCode === 9) icon = "🟥"; // Red card
+                else if (typeCode === 5) icon = "🔄"; // Substitution
 
-                const teamName = evt.team?.name || "";
-                let desc = `<strong>${typeText.replace(/_/g, " ")}</strong> - ${evt.player?.name || "Player"} (${teamName})`;
-                if (typeText.includes("SUBST")) {
-                    desc = `<strong>Substitution</strong> - In: ${evt.playerIn?.name || "Player"} | Out: ${evt.playerOut?.name || "Player"} (${teamName})`;
-                }
+                let desc = evt.EventDescription?.[0]?.Description || "Match event";
 
                 const row = document.createElement("div");
                 row.className = "popup-event-row";
                 row.innerHTML = `
-                    <span class="popup-event-time">${evt.minute || 0}'</span>
+                    <span class="popup-event-time">${escapeHTML(evt.MatchMinute || "0'")}</span>
                     <span class="popup-event-icon">${icon}</span>
-                    <span class="popup-event-desc">${desc}</span>
+                    <span class="popup-event-desc">${escapeHTML(desc)}</span>
                 `;
                 eventsListEl.appendChild(row);
             });
@@ -489,7 +510,15 @@ export const openMatchDetailPopup = async (game) => {
     // Dynamic Stats row
     if (statsWrapper) {
         statsWrapper.innerHTML = "";
-        if (liveState && liveState.stats) {
+        
+        const countEventType = (typeCode, teamId) => {
+            return timelineEvents.filter(e => e.Type === typeCode && String(e.IdTeam) === String(teamId)).length;
+        };
+
+        const homeTeamId = state.currentSelectedMatchDetails?.HomeTeam?.IdTeam || game.homeTeam?.id;
+        const awayTeamId = state.currentSelectedMatchDetails?.AwayTeam?.IdTeam || game.awayTeam?.id;
+
+        if (timelineEvents.length > 0 && homeTeamId && awayTeamId) {
             const buildStatRow = (title, valHome, valAway) => {
                 const intHome = parseInt(valHome) || 0;
                 const intAway = parseInt(valAway) || 0;
@@ -504,7 +533,7 @@ export const openMatchDetailPopup = async (game) => {
                                 <div class="split-fill" style="width: ${pctHome}%; background: #10b981; margin-left: auto;"></div>
                             </div>
                         </div>
-                        <div class="split-bar-label" style="font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">${title}</div>
+                        <div class="split-bar-label" style="font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">${escapeHTML(title)}</div>
                         <div class="split-bar-col team2-side">
                             <div class="split-track" style="height: 4px; background: rgba(255,255,255,0.06);">
                                 <div class="split-fill" style="width: ${pctAway}%; background: #60a5fa;"></div>
@@ -515,16 +544,21 @@ export const openMatchDetailPopup = async (game) => {
                 `;
             };
 
-            const homePoss = liveState.stats?.possession || 50;
-            const awayPoss = 100 - homePoss;
+            const shotsH = countEventType(12, homeTeamId);
+            const shotsA = countEventType(12, awayTeamId);
+            const cornersH = countEventType(16, homeTeamId);
+            const cornersA = countEventType(16, awayTeamId);
+            const foulsH = countEventType(18, homeTeamId);
+            const foulsA = countEventType(18, awayTeamId);
+            const offsidesH = countEventType(15, homeTeamId);
+            const offsidesA = countEventType(15, awayTeamId);
 
             statsWrapper.innerHTML = `
                 <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">Match Statistics</div>
-                ${buildStatRow("Possession", `${homePoss}%`, `${awayPoss}%`)}
-                ${buildStatRow("Shots", liveState.stats?.shotsHome || 0, liveState.stats?.shotsAway || 0)}
-                ${buildStatRow("Shots on Target", liveState.stats?.shotsOnTargetHome || 0, liveState.stats?.shotsOnTargetAway || 0)}
-                ${buildStatRow("Goalkeeper Saves", liveState.stats?.savesHome || 0, liveState.stats?.savesAway || 0)}
-                ${buildStatRow("Corners", liveState.stats?.cornersHome || 0, liveState.stats?.cornersAway || 0)}
+                ${buildStatRow("Shots", shotsH, shotsA)}
+                ${buildStatRow("Corners", cornersH, cornersA)}
+                ${buildStatRow("Fouls", foulsH, foulsA)}
+                ${buildStatRow("Offsides", offsidesH, offsidesA)}
             `;
         } else {
             statsWrapper.style.display = "none";

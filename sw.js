@@ -38,9 +38,10 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS);
-    }).then(() => self.skipWaiting())
+    Promise.all([
+      caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)),
+      self.skipWaiting()
+    ])
   );
 });
 
@@ -138,6 +139,11 @@ self.addEventListener('fetch', e => {
         // Safe fallback handling for image elements vs other file types
         if (e.request.destination === 'image') {
           return new Response('', { status: 404, statusText: 'Offline' });
+        }
+        if (url.pathname.includes('/api/matches')) {
+          return new Response(JSON.stringify({ error: 'Offline - data feed unavailable' }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
         }
         return new Response('Offline content - check internet connection.');
       });

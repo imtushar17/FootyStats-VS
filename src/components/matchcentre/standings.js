@@ -1,9 +1,6 @@
 import { state } from './state.js';
 import { getWcTeamFlagHTML } from './utils.js';
 
-export const updateLiveStandings = () => {
-    // Removed from main screen per request
-};
 
 export const aggregateGroupStandings = (groupName) => {
     const teamsMap = {};
@@ -111,7 +108,7 @@ export const renderGroupsExplorer = (container) => {
             </thead>
             <tbody>
                 ${groupTeams.map((team, idx) => `
-                    <tr class="${idx < 2 ? 'advancing-pos' : ''}">
+                    <tr class="${idx < 2 ? 'advancing-pos' : idx === 2 ? 'possible-advancing-pos' : ''}" style="${idx === 2 ? 'border-left: 3px solid #eab308; background: rgba(234,179,8,0.02);' : ''}">
                         <td class="standings-num">${idx + 1}</td>
                         <td class="standings-team-name">
                             ${getWcTeamFlagHTML(team.name, "standings-tbl-flag")}
@@ -125,6 +122,17 @@ export const renderGroupsExplorer = (container) => {
             </tbody>
         `;
         cardBox.appendChild(table);
+        
+        const note = document.createElement("div");
+        note.className = "group-advancing-note";
+        note.style.fontSize = "8px";
+        note.style.color = "var(--text-muted)";
+        note.style.marginTop = "6px";
+        note.style.textAlign = "center";
+        note.style.opacity = "0.75";
+        note.innerHTML = "🟢 Top 2 advance | 🟡 Best 8 third-place qualify";
+        cardBox.appendChild(note);
+
         container.appendChild(cardBox);
     });
 };

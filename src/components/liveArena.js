@@ -4,7 +4,13 @@ import {
     getStadiumName, 
     getWcTeamFlagHTML, 
     getTeamData, 
-    normalizeTeamName 
+    normalizeTeamName,
+    isMatchFinished,
+    isMatchLive,
+    isMatchUpcoming,
+    getGameScore,
+    parseGameDate,
+    escapeHTML
 } from './matchcentre/utils.js';
 import { 
     fetchMatchesList, 
@@ -12,7 +18,6 @@ import {
     showDataFeedErrorBanner 
 } from './matchcentre/api.js';
 import { 
-    updateLiveStandings, 
     aggregateGroupStandings, 
     renderGroupsExplorer 
 } from './matchcentre/standings.js';
@@ -53,7 +58,6 @@ export {
     fetchMatchesList, 
     fetchMatchDetails, 
     showDataFeedErrorBanner,
-    updateLiveStandings, 
     aggregateGroupStandings, 
     renderGroupsExplorer,
     drawLineupPitch,
@@ -82,12 +86,6 @@ const getTodayMatches = () => {
 
     const parseDate = (game) => {
         if (game.utcDate) return new Date(game.utcDate);
-        if (game.local_date) {
-            const [datePart, timePart] = game.local_date.split(' ');
-            const [m, d, y] = datePart.split('/').map(Number);
-            const [hr, min] = (timePart || '00:00').split(':').map(Number);
-            return new Date(y, m - 1, d, hr, min);
-        }
         return new Date(0);
     };
 
@@ -171,8 +169,8 @@ export const renderLiveMatches = () => {
         }
 
         if (!state.liveStates[game.id]) {
-            const isLive = game.status === "IN_PLAY" || game.status === "PAUSED" || (game.finished === "FALSE" && game.time_elapsed !== "notstarted");
-            const isFinished = game.status === "FINISHED" || game.finished === "TRUE";
+            const isLive = isMatchLive(game);
+            const isFinished = isMatchFinished(game);
             let initialMin = 0;
             if (isLive) {
                 const parsed = parseInt(game.time_elapsed);
@@ -181,8 +179,9 @@ export const renderLiveMatches = () => {
                 initialMin = 90;
             }
             
-            const initialScoreHome = game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined ? game.score.fullTime.home : (parseInt(game.home_score) || 0);
-            const initialScoreAway = game.score?.fullTime?.away !== null && game.score?.fullTime?.away !== undefined ? game.score.fullTime.away : (parseInt(game.away_score) || 0);
+            const scoreVal = getGameScore(game);
+            const initialScoreHome = scoreVal.home !== null ? scoreVal.home : 0;
+            const initialScoreAway = scoreVal.away !== null ? scoreVal.away : 0;
 
             const liveState = {
                 minute: initialMin,
@@ -210,26 +209,22 @@ export const renderLiveMatches = () => {
 
         const liveState = state.liveStates[game.id];
 
-        let scoreText = "vs";
-        if (game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined) {
-            scoreText = `${game.score.fullTime.home} - ${game.score.fullTime.away}`;
-        } else if (liveState && liveState.scoreHome !== undefined) {
-            scoreText = `${liveState.scoreHome} - ${liveState.scoreAway}`;
-        }
+        const scoreVal = getGameScore(game);
+        const isUpcoming = isMatchUpcoming(game);
+        const isLive = isMatchLive(game);
+        const isFinished = isMatchFinished(game) || (liveState && liveState.finished);
+
+        const scoreText = (isLive || isFinished) ? `${escapeHTML(scoreVal.home)} - ${escapeHTML(scoreVal.away)}` : "vs";
 
         let statusText = "Upcoming";
         let statusClass = "status-upcoming";
         
-        const status = game.status;
-        if (status === "FINISHED") {
+        if (isFinished) {
             statusText = "Finished";
             statusClass = "status-finished";
-        } else if (status === "IN_PLAY" || status === "PAUSED") {
-            statusText = status === "PAUSED" ? "HT" : "Live";
+        } else if (isLive) {
+            statusText = game.status === "PAUSED" ? "HT" : "Live";
             statusClass = "status-live";
-        } else if (liveState && liveState.finished) {
-            statusText = "Finished";
-            statusClass = "status-finished";
         }
 
         let matchTime = "";
@@ -239,23 +234,27 @@ export const renderLiveMatches = () => {
             const istTime = formatToIST(game.local_date, game.stadium_id, game.id);
             matchTime = istTime.time;
         }
+        matchTime = escapeHTML(matchTime);
 
         const groupLabel = game.group ? game.group.replace("GROUP_", "Group ") : "";
+        const displayGroupLabel = escapeHTML(groupLabel);
+        const displayHName = escapeHTML(hName);
+        const displayAName = escapeHTML(aName);
 
         card.innerHTML = `
             <div class="m-card-teams">
                 <div class="m-card-team-row">
                     ${getWcTeamFlagHTML(hName, "m-card-flag")}
-                    <span class="m-card-team-name">${hName}</span>
+                    <span class="m-card-team-name">${displayHName}</span>
                 </div>
                 <div class="m-card-team-row">
                     ${getWcTeamFlagHTML(aName, "m-card-flag")}
-                    <span class="m-card-team-name">${aName}</span>
+                    <span class="m-card-team-name">${displayAName}</span>
                 </div>
             </div>
             <div class="m-card-score-box">
                 <span class="m-card-score">${scoreText}</span>
-                <span class="m-card-meta">${groupLabel} • ${matchTime}</span>
+                <span class="m-card-meta">${displayGroupLabel} • ${matchTime}</span>
             </div>
             <span class="m-card-status-pill ${statusClass}">
                 ${statusText}
@@ -297,7 +296,6 @@ export const selectLiveMatch = async (game) => {
     
     await fetchMatchDetails(game.id);
     updateConsoleDetails(game);
-    updateLiveStandings();
 };
 
 registerPopupCallbacks(selectLiveMatch);
@@ -307,20 +305,24 @@ export const activateLiveArena = async () => {
 
     await fetchMatchesList();
     renderLiveMatches();
-    updateLiveStandings();
 
     const todayMatches = getTodayMatches();
     if (todayMatches.length > 0 && !state.selectedLiveMatchId) {
-        const liveGame = todayMatches.find(g => {
-            return g.status === "IN_PLAY" || g.status === "PAUSED" || (g.finished === "FALSE" && g.time_elapsed !== "notstarted");
-        }) || todayMatches[0];
-        selectLiveMatch(liveGame);
+        const liveGame = todayMatches.find(isMatchLive) || todayMatches[0];
+        await selectLiveMatch(liveGame);
     }
 
     state.matchesListInterval = setInterval(async () => {
         await fetchMatchesList();
         renderLiveMatches();
-        updateLiveStandings();
+        
+        if (state.selectedLiveMatchId) {
+            const currentGame = state.worldCupGames.find(g => g.id === state.selectedLiveMatchId);
+            if (currentGame) {
+                await fetchMatchDetails(currentGame.id);
+                updateConsoleDetails(currentGame);
+            }
+        }
     }, 60000);
 };
 

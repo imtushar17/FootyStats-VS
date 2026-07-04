@@ -10,72 +10,73 @@ module.exports = async (req, res) => {
         return res.status(200).end();
     }
 
-    const apiKey = process.env.FOOTBALL_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: "Missing FOOTBALL_API_KEY environment variable" });
-    }
-
-    const { matchId, ...restQuery } = req.query;
+    const { matchId, timeline, ...restQuery } = req.query;
     const isDetailRequest = !!matchId;
+    const isTimelineRequest = isDetailRequest && (timeline === 'true' || timeline === true);
 
     // Build Cache Key
-    const cacheKey = isDetailRequest ? `match:${matchId}` : `general:${JSON.stringify(restQuery)}`;
-    
+    let cacheKey = 'calendar';
+    if (isTimelineRequest) {
+        cacheKey = `timeline:${matchId}`;
+    } else if (isDetailRequest) {
+        cacheKey = `match:${matchId}`;
+    }
+
     // Check in-memory cache first
     const now = Date.now();
     const cachedItem = memoryCache.get(cacheKey);
     if (cachedItem && now < cachedItem.expiry) {
-        console.log(`[Cache Hit] Serving ${cacheKey} from memory`);
-        // Set CDN cache headers for the client/CDN
         res.setHeader('Cache-Control', cachedItem.cacheControl);
         return res.status(200).json(cachedItem.data);
     }
 
     // Build Target API URL
-    let targetUrl = "https://api.football-data.org/v4/competitions/WC/matches";
-    if (isDetailRequest) {
-        targetUrl = `https://api.football-data.org/v4/matches/${matchId}`;
-    } else {
-        // Forward any extra query parameters (e.g. dateFrom, dateTo, status, etc.)
-        const searchParams = new URLSearchParams(restQuery);
-        const searchStr = searchParams.toString();
-        if (searchStr) {
-            targetUrl += `?${searchStr}`;
-        }
+    let targetUrl = "https://api.fifa.com/api/v3/calendar/matches?idCompetition=17&idSeason=285023&language=en&count=200";
+    if (isTimelineRequest) {
+        targetUrl = `https://api.fifa.com/api/v3/timelines/${matchId}?language=en`;
+    } else if (isDetailRequest) {
+        targetUrl = `https://api.fifa.com/api/v3/live/football/${matchId}?language=en`;
     }
 
     try {
-        console.log(`[API Request] Fetching from: ${targetUrl}`);
-        const apiResponse = await fetch(targetUrl, {
-            headers: {
-                'X-Auth-Token': apiKey
-            }
-        });
-
+        const apiResponse = await fetch(targetUrl);
         if (!apiResponse.ok) {
-            const errText = await apiResponse.text();
-            throw new Error(`External API returned HTTP ${apiResponse.status}: ${errText}`);
+            throw new Error(`FIFA API returned HTTP ${apiResponse.status}`);
         }
 
         const data = await apiResponse.json();
 
         // Determine caching duration based on status
-        let cacheDurationSeconds = 60; // Default 60 seconds for live/upcoming matches
+        let cacheDurationSeconds = 15; // default 15s for live/active updates
         
-        if (isDetailRequest) {
-            const matchStatus = data.status; // e.g. FINISHED, IN_PLAY, TIMED
-            if (matchStatus === 'FINISHED') {
+        if (isDetailRequest && data) {
+            const period = data.Period; // 10 = Finished
+            if (period === 10) {
                 cacheDurationSeconds = 86400; // Cache finished match details for 24 hours
             }
+        } else if (isTimelineRequest && data) {
+            // If the timeline shows match end event, we can cache it longer
+            const events = data.Event || [];
+            const isFinished = events.some(e => e.Type === 26 || e.Type === 8);
+            if (isFinished) {
+                cacheDurationSeconds = 86400;
+            }
         } else {
-            // General feed caching: if all matches are finished, we could cache longer, but default to 60s
-            // to keep it simple and safe for today's matches
-            cacheDurationSeconds = 60;
+            // For the general calendar/all matches feed, cache for 1 hour, or 24 hours if all matches are finished
+            const matches = data?.Results || [];
+            const allFinished = matches.length > 0 && matches.every(m => m.Period === 10);
+            if (allFinished) {
+                cacheDurationSeconds = 86400;
+            } else {
+                cacheDurationSeconds = 3600;
+            }
         }
 
         const cacheControlHeader = cacheDurationSeconds === 86400
-            ? 'public, max-age=0, s-maxage=86400, stale-while-revalidate=300'
-            : 'public, max-age=0, s-maxage=60, stale-while-revalidate=30';
+            ? 'public, max-age=0, s-maxage=86400, stale-while-revalidate=600'
+            : cacheDurationSeconds === 3600
+                ? 'public, max-age=0, s-maxage=3600, stale-while-revalidate=300'
+                : 'public, max-age=0, s-maxage=15, stale-while-revalidate=5';
 
         // Save to in-memory cache
         memoryCache.set(cacheKey, {
@@ -88,13 +89,12 @@ module.exports = async (req, res) => {
         return res.status(200).json(data);
 
     } catch (err) {
-        console.error(`[API Error] ${err.message}`);
-        // If we have stale data in cache, we can serve it as fallback in case of API failure
+        // If we have stale data in cache, serve it as fallback
         if (cachedItem) {
-            console.log(`[Cache Fallback] Serving stale memory cache for ${cacheKey}`);
             res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10');
             return res.status(200).json(cachedItem.data);
         }
         return res.status(500).json({ error: err.message });
     }
 };
+

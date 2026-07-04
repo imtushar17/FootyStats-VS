@@ -1,4 +1,5 @@
 import { teamData } from '../../data/teams.js';
+import { state } from './state.js';
 
 export const OFFICIAL_IST_MAP = {
     "1": { date: "Jun 12", dateFull: "Jun 12, 2026", dateLong: "Friday, June 12, 2026", time: "00:30 IST", full: "Jun 12, 2026 • 00:30 IST" },
@@ -255,3 +256,144 @@ export const getStadiumName = (stadiumId) => {
     };
     return stadiums[stadiumId] || "World Cup Stadium";
 };
+
+export const mapFifaMatch = (m) => {
+    if (!m) return null;
+    const home = m.HomeTeam || m.Home || {};
+    const away = m.AwayTeam || m.Away || {};
+
+    const homeName = home.TeamName?.[0]?.Description || home.ShortClubName || "TBD";
+    const awayName = away.TeamName?.[0]?.Description || away.ShortClubName || "TBD";
+
+    // Map stage
+    let stage = "GROUP_STAGE";
+    const stageDesc = m.StageName?.Description || "";
+    if (stageDesc.includes("Round of 16")) stage = "ROUND_OF_16";
+    else if (stageDesc.includes("Quarter-finals")) stage = "QUARTER_FINALS";
+    else if (stageDesc.includes("Semi-finals")) stage = "SEMI_FINALS";
+    else if (stageDesc.includes("Play-off for third place")) stage = "THIRD_PLACE";
+    else if (stageDesc.includes("Final")) stage = "FINAL";
+
+    // Map group name
+    let group = "";
+    const groupDesc = m.GroupName?.Description || "";
+    if (groupDesc.startsWith("Group ")) {
+        group = groupDesc.toUpperCase().replace("GROUP ", "GROUP_");
+    }
+
+    // Map status
+    let status = "TIMED";
+    if (m.Period === 10) {
+        status = "FINISHED";
+    } else if (m.Period === 6) {
+        status = "PAUSED";
+    } else if (m.Period > 0) {
+        status = "IN_PLAY";
+    }
+
+    const homeScore = home.Score !== null && home.Score !== undefined ? home.Score : null;
+    const awayScore = away.Score !== null && away.Score !== undefined ? away.Score : null;
+
+    const mapped = {
+        id: String(m.MatchNumber),
+        fifaMatchId: String(m.IdMatch),
+        status: status,
+        finished: m.Period === 10 ? "TRUE" : "FALSE",
+        time_elapsed: m.Period === 0 ? "notstarted" : (m.MatchTime ? m.MatchTime.replace("'", "") : "0"),
+        homeTeam: {
+            id: home.IdTeam,
+            name: homeName
+        },
+        awayTeam: {
+            id: away.IdTeam,
+            name: awayName
+        },
+        home_team_name_en: homeName,
+        away_team_name_en: awayName,
+        home_score: homeScore,
+        away_score: awayScore,
+        score: {
+            fullTime: {
+                home: homeScore,
+                away: awayScore
+            }
+        },
+        home_penalty_score: m.HomeTeamPenaltyScore !== null && m.HomeTeamPenaltyScore !== undefined ? String(m.HomeTeamPenaltyScore) : null,
+        away_penalty_score: m.AwayTeamPenaltyScore !== null && m.AwayTeamPenaltyScore !== undefined ? String(m.AwayTeamPenaltyScore) : null,
+        group: group || null,
+        stage: stage,
+        utcDate: m.Date || "",
+        local_date: m.LocalDate ? m.LocalDate.replace("T", " ").substring(0, 16) : "",
+        stadium_id: m.Stadium?.IdStadium || "1",
+        venue: m.Stadium?.Name?.[0]?.Description || "World Cup Stadium",
+        attendance: m.Attendance || "",
+        winner: m.Winner || null,
+        _original: m
+    };
+    return mapped;
+};
+
+export const escapeHTML = (str) => {
+    if (str === null || str === undefined) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
+export const isMatchFinished = (game) => {
+    if (!game) return false;
+    return game.status === "FINISHED" || game.finished === "TRUE";
+};
+
+export const isMatchLive = (game) => {
+    if (!game) return false;
+    return game.status === "IN_PLAY" || game.status === "PAUSED";
+};
+
+export const isMatchUpcoming = (game) => {
+    if (!game) return true;
+    return game.status === "TIMED" || game.status === "SCHEDULED" || game.time_elapsed === "notstarted";
+};
+
+export const getGameScore = (game) => {
+    if (!game) return { home: null, away: null };
+    const details = state.currentSelectedMatchDetails;
+    const liveState = state.liveStates[game.id];
+
+    let homeScore = game.home_score;
+    let awayScore = game.away_score;
+
+    if (liveState) {
+        homeScore = liveState.scoreHome;
+        awayScore = liveState.scoreAway;
+    }
+
+    if (game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined) {
+        homeScore = game.score.fullTime.home;
+        awayScore = game.score.fullTime.away;
+    } else if (details && String(details.IdMatch) === String(game.fifaMatchId || game.id)) {
+        // Parse from active detail view if ID matches
+        const homeObj = details.HomeTeam || details.Home;
+        const awayObj = details.AwayTeam || details.Away;
+        if (homeObj?.Score !== null && homeObj?.Score !== undefined) {
+            homeScore = homeObj.Score;
+            awayScore = awayObj.Score;
+        }
+    }
+
+    return {
+        home: homeScore !== null && homeScore !== undefined ? Number(homeScore) : null,
+        away: awayScore !== null && awayScore !== undefined ? Number(awayScore) : null
+    };
+};
+
+export const parseGameDate = (game) => {
+    if (!game) return new Date(0);
+    if (game.utcDate) return new Date(game.utcDate);
+    return new Date(0);
+};
+
+

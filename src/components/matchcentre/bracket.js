@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getWcTeamFlagHTML, formatToIST } from './utils.js';
+import { getWcTeamFlagHTML, formatToIST, escapeHTML, isMatchFinished, isMatchLive, isMatchUpcoming, getGameScore } from './utils.js';
 
 export const getBracketPlaceholderName = (matchId, isAway) => {
     const mappings = {
@@ -22,7 +22,7 @@ export const getBracketPlaceholderName = (matchId, isAway) => {
     };
     const pair = mappings[matchId];
     if (pair) return pair[isAway ? 1 : 0];
-    return isAway ? "TBD" : "TBD";
+    return "TBD";
 };
 
 export const renderKnockoutBracket = (container) => {
@@ -73,26 +73,11 @@ export const renderKnockoutBracket = (container) => {
         }
 
         const liveState = state.liveStates[game.id];
-        let scoreHome = "";
-        let scoreAway = "";
-        let isPlayed = false;
-        let isLive = false;
-
-        if (game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined) {
-            scoreHome = game.score.fullTime.home;
-            scoreAway = game.score.fullTime.away;
-            isPlayed = game.status === "FINISHED";
-            isLive = game.status === "IN_PLAY" || game.status === "PAUSED";
-        } else if (liveState) {
-            scoreHome = liveState.scoreHome;
-            scoreAway = liveState.scoreAway;
-            isPlayed = liveState.finished;
-            isLive = !liveState.finished && game.finished === "FALSE" && game.time_elapsed !== "notstarted";
-        } else {
-            scoreHome = game.finished === "TRUE" ? (parseInt(game.home_score) || 0) : "";
-            scoreAway = game.finished === "TRUE" ? (parseInt(game.away_score) || 0) : "";
-            isPlayed = game.finished === "TRUE";
-        }
+        const scoreVal = getGameScore(game);
+        const isPlayed = isMatchFinished(game) || (liveState && liveState.finished);
+        const isLive = isMatchLive(game);
+        const scoreHome = scoreVal.home !== null ? scoreVal.home : "";
+        const scoreAway = scoreVal.away !== null ? scoreVal.away : "";
 
         if (isLive) {
             const min = liveState ? liveState.minute : game.time_elapsed;
@@ -139,34 +124,39 @@ export const renderKnockoutBracket = (container) => {
             }
         }
 
-        const shieldIcon = `<svg class="flag-placeholder-shield" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`;
-        const homeFlagHTML = hasHome ? getWcTeamFlagHTML(hName, "bracket-team-flag") : shieldIcon;
-        const awayFlagHTML = hasAway ? getWcTeamFlagHTML(aName, "bracket-team-flag") : shieldIcon;
+        const homeFlagHTML = hasHome ? getWcTeamFlagHTML(hName, "bracket-flag") : `<span class="bracket-flag-tbd">🏳️</span>`;
+        const awayFlagHTML = hasAway ? getWcTeamFlagHTML(aName, "bracket-flag") : `<span class="bracket-flag-tbd">🏳️</span>`;
 
         const node = document.createElement("div");
-        node.className = `bracket-match-node ${nodeClass}`;
-        node.dataset.matchId = game.id;
-        node.dataset.unresolved = isUnresolved;
+        node.className = `bracket-match-node ${nodeClass} ${isUnresolved ? 'unresolved' : ''}`;
+        node.setAttribute("data-match-id", game.id);
+
+        const escapedHomeName = escapeHTML(homeDisplayName);
+        const escapedAwayName = escapeHTML(awayDisplayName);
+        const escapedHomeScore = escapeHTML(homeScoreText);
+        const escapedAwayScore = escapeHTML(awayScoreText);
+        const escapedHeaderDate = escapeHTML(headerDate);
+        const escapedHeaderStatus = escapeHTML(headerStatus);
 
         node.innerHTML = `
-            <div class="bracket-match-header">
-                <span class="bracket-header-date">${headerDate}</span>
-                <span class="bracket-header-status ${statusClass}">${headerStatus}</span>
+            <div class="bracket-node-header">
+                <span class="b-match-num">Match ${escapeHTML(game.id)}</span>
+                <span class="b-match-time ${escapeHTML(statusClass)}">${escapedHeaderDate} • ${escapedHeaderStatus}</span>
             </div>
             <div class="bracket-match-teams">
-                <div class="bracket-team-row ${homeClass}">
+                <div class="bracket-team-row ${escapeHTML(homeClass)}">
                     <div class="bracket-team-info">
                         ${homeFlagHTML}
-                        <span>${homeDisplayName}</span>
+                        <span>${escapedHomeName}</span>
                     </div>
-                    <span class="bracket-team-score">${homeScoreText}</span>
+                    <span class="bracket-team-score">${escapedHomeScore}</span>
                 </div>
-                <div class="bracket-team-row ${awayClass}">
+                <div class="bracket-team-row ${escapeHTML(awayClass)}">
                     <div class="bracket-team-info">
                         ${awayFlagHTML}
-                        <span>${awayDisplayName}</span>
+                        <span>${escapedAwayName}</span>
                     </div>
-                    <span class="bracket-team-score">${awayScoreText}</span>
+                    <span class="bracket-team-score">${escapedAwayScore}</span>
                 </div>
             </div>
             ${upcomingFooterHTML}

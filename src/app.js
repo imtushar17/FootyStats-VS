@@ -21,6 +21,15 @@ const initTabSlider = () => {
     tabSlider.style.top = `${btnRect.top - navRect.top}px`;
 };
 
+let statsLoaded = false;
+const triggerDeferredStatsLoading = () => {
+    if (statsLoaded) return;
+    statsLoaded = true;
+    console.log("Deferred loading of comparison stats (Rankings & Top Scorers) triggered.");
+    fetchLiveRankings();
+    fetchLiveTopScorers();
+};
+
 const setupTabListeners = () => {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
@@ -44,6 +53,10 @@ const setupTabListeners = () => {
                 const t1 = team1Input?.value;
                 const t2 = team2Input?.value;
                 if (t1 && t2) drawTacticsPitch(t1, t2);
+            }
+
+            if (btn.dataset.tab === 'compare') {
+                triggerDeferredStatsLoading();
             }
 
             if (tabSlider && tabsNav) {
@@ -123,10 +136,9 @@ window.addEventListener('DOMContentLoaded', () => {
     
     setupTabListeners();
     setupGatewayListeners();
+});
 
-    // Fetch live APIs asynchronously
-    fetchLiveRankings();
-    fetchLiveTopScorers();
-
+// Calculate tab slider position after custom web fonts are fully loaded
+window.addEventListener('load', () => {
     initTabSlider();
 });

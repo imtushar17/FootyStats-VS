@@ -1,10 +1,13 @@
 import { state } from './state.js';
+import { mapFifaMatch } from './utils.js';
+
+let activeBanner = null;
 
 export const showDataFeedErrorBanner = (message) => {
-    const errorBanner = document.getElementById("data-feed-error-banner");
-    if (errorBanner) {
-        errorBanner.textContent = message;
-        errorBanner.style.display = "block";
+    // If the banner exists and is attached to the body, just update message
+    if (activeBanner && document.body.contains(activeBanner)) {
+        activeBanner.textContent = message;
+        activeBanner.style.display = "block";
     } else {
         const banner = document.createElement("div");
         banner.id = "data-feed-error-banner";
@@ -21,11 +24,22 @@ export const showDataFeedErrorBanner = (message) => {
         banner.style.zIndex = "30000";
         banner.textContent = message;
         document.body.appendChild(banner);
+        activeBanner = banner;
         
         setTimeout(() => {
-            banner.remove();
+            if (document.body.contains(banner)) {
+                banner.remove();
+            }
+            if (activeBanner === banner) {
+                activeBanner = null;
+            }
         }, 3000);
     }
+};
+
+export const getFifaMatchId = (id) => {
+    const game = state.worldCupGames.find(g => String(g.id) === String(id));
+    return game?.fifaMatchId || id;
 };
 
 export const fetchMatchesList = async () => {
@@ -38,13 +52,11 @@ export const fetchMatchesList = async () => {
         }
         const data = await res.json();
         
-        if (data && Array.isArray(data.matches)) {
-            state.currentLiveMatches = data.matches;
-            state.worldCupGames = data.matches;
-            console.log(`Successfully fetched ${state.currentLiveMatches.length} matches from proxy.`);
-        } else if (data && Array.isArray(data.games)) {
-            state.currentLiveMatches = data.games;
-            state.worldCupGames = data.games;
+        if (data && Array.isArray(data.Results)) {
+            const mappedGames = data.Results.map(mapFifaMatch).filter(Boolean);
+            state.currentLiveMatches = mappedGames;
+            state.worldCupGames = mappedGames;
+            console.log(`Successfully fetched ${state.worldCupGames.length} matches from proxy.`);
         } else {
             throw new Error("Invalid response format from matches proxy");
         }
@@ -58,12 +70,26 @@ export const fetchMatchesList = async () => {
 export const fetchMatchDetails = async (matchId) => {
     try {
         state.dataFeedError = null;
-        console.log(`Fetching match details for ID ${matchId} from Vercel proxy...`);
-        const res = await fetch(`/api/matches?matchId=${matchId}`);
+        const fifaId = getFifaMatchId(matchId);
+        console.log(`Fetching match details for ID ${matchId} (FIFA ID: ${fifaId}) from Vercel proxy...`);
+        const res = await fetch(`/api/matches?matchId=${fifaId}`);
         if (!res.ok) {
             throw new Error(`HTTP Error ${res.status}`);
         }
         const data = await res.json();
+        
+        // Parallel or sequential timeline fetch
+        try {
+            const tlRes = await fetch(`/api/matches?matchId=${fifaId}&timeline=true`);
+            if (tlRes.ok) {
+                const tlData = await tlRes.json();
+                data.timelineEvents = tlData?.Event || [];
+            }
+        } catch (e) {
+            console.warn("Failed to fetch timeline for details:", e.message);
+            data.timelineEvents = [];
+        }
+
         state.currentSelectedMatchDetails = data;
         console.log(`Successfully fetched details for match ID ${matchId}.`);
         return data;
@@ -74,3 +100,24 @@ export const fetchMatchDetails = async (matchId) => {
         return null;
     }
 };
+
+export const fetchMatchTimeline = async (matchId) => {
+    try {
+        state.dataFeedError = null;
+        const fifaId = getFifaMatchId(matchId);
+        console.log(`Fetching timeline for ID ${matchId} (FIFA ID: ${fifaId}) from Vercel proxy...`);
+        const res = await fetch(`/api/matches?matchId=${fifaId}&timeline=true`);
+        if (!res.ok) {
+            throw new Error(`HTTP Error ${res.status}`);
+        }
+        const data = await res.json();
+        console.log(`Successfully fetched timeline for match ID ${matchId}.`);
+        return data;
+    } catch (err) {
+        console.error(`Failed to fetch timeline for match ID ${matchId}:`, err.message);
+        state.dataFeedError = "Data Feed Temporarily Unavailable";
+        showDataFeedErrorBanner(state.dataFeedError);
+        return null;
+    }
+};
+

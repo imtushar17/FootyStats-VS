@@ -1,6 +1,5 @@
 import { state } from './state.js';
-import { teamData } from '../../data/teams.js';
-import { getWcTeamFlagHTML, getStadiumName, formatToIST } from './utils.js';
+import { getWcTeamFlagHTML, getStadiumName, formatToIST, escapeHTML, isMatchFinished, isMatchLive, isMatchUpcoming, getGameScore, parseGameDate } from './utils.js';
 import { renderKnockoutBracket } from './bracket.js';
 import { renderGroupsExplorer } from './standings.js';
 
@@ -45,6 +44,9 @@ export const closeGroups = () => {
     document.getElementById("groups-overlay")?.classList.remove("open");
 };
 
+let selectedDay = null;
+let selectedMonth = null;
+
 export const filterExplorerGames = (activeTab, searchVal) => {
     const grid = document.getElementById("explorer-games-grid");
     const searchWrapper = document.getElementById("explorer-search-wrapper");
@@ -55,13 +57,17 @@ export const filterExplorerGames = (activeTab, searchVal) => {
         if (searchWrapper) searchWrapper.style.display = "none";
         grid.style.display = "block";
         grid.style.maxHeight = "55vh";
-        drawCalendarGrid(grid);
+        if (selectedDay !== null && selectedMonth !== null) {
+            drawDayMatchesView(grid, selectedDay, selectedMonth);
+        } else {
+            drawCalendarGrid(grid);
+        }
     } else {
         if (searchWrapper) {
             searchWrapper.style.display = "flex";
             if (!searchWrapper.dataset.randomized) {
-                const teamKeys = Object.keys(teamData);
-                const randomTeam = teamKeys[Math.floor(Math.random() * teamKeys.length)];
+                const sampleTeams = ["Argentina", "France", "Brazil", "Germany", "Spain", "England", "USA", "Mexico", "Portugal", "Canada", "Japan", "Italy"];
+                const randomTeam = sampleTeams[Math.floor(Math.random() * sampleTeams.length)];
                 const searchInput = document.getElementById("explorer-search");
                 if (searchInput) {
                     searchInput.placeholder = `e.g. ${randomTeam}`;
@@ -132,7 +138,7 @@ const getFirstDayOfWeek = (year, month) => new Date(year, month - 1, 1).getDay()
 
 // Helper: World Cup start date (June 12, 2026 in IST)
 const WC_START = { month: 6, day: 12 };
-const WC_END = { month: 7, day: 19 };
+const WC_END = { month: 7, day: 20 };
 
 const isBeforeWC = (month, day) => {
     if (month < WC_START.month) return true;
@@ -191,6 +197,9 @@ const buildCalendarMonthHTML = (year, month, games) => {
                 classes += " active-matchday";
                 badge = `<span class="cal-match-count">${dayMatches.length}</span>`;
             }
+        }
+        if (month === selectedMonth && day === selectedDay) {
+            classes += " selected-date";
         }
         cells += `<div class="${classes}" data-day="${day}" data-month="${month}">${day}${badge}</div>`;
     }
@@ -291,6 +300,8 @@ export const drawCalendarGrid = (container, targetMonth) => {
             } else {
                 wrapper.querySelectorAll(".calendar-day-cell").forEach(c => c.classList.remove("selected-date"));
                 cell.classList.add("selected-date");
+                selectedDay = day;
+                selectedMonth = month;
                 drawDayMatchesView(container, day, month);
             }
         });
@@ -336,6 +347,8 @@ export const drawDayMatchesView = (container, day, month) => {
     }
 
     document.getElementById("calendar-day-back-btn")?.addEventListener("click", () => {
+        selectedDay = null;
+        selectedMonth = null;
         container.innerHTML = "";
         drawCalendarGrid(container, displayMonth);
     });
@@ -347,26 +360,13 @@ export const createExplorerMatchCard = (game) => {
     card.style.cursor = "pointer";
 
     const liveState = state.liveStates[game.id];
-    let scoreHome = game.home_score;
-    let scoreAway = game.away_score;
-    let isLive = game.finished === "FALSE" && game.time_elapsed !== "notstarted";
-    let isFinished = game.finished === "TRUE";
+    const scoreVal = getGameScore(game);
+    const scoreHome = scoreVal.home;
+    const scoreAway = scoreVal.away;
+    const isLive = isMatchLive(game);
+    const isFinished = isMatchFinished(game);
     
-    if (liveState) {
-        scoreHome = liveState.scoreHome;
-        scoreAway = liveState.scoreAway;
-        isLive = !liveState.finished && game.finished === "FALSE" && game.time_elapsed !== "notstarted";
-        isFinished = liveState.finished;
-    }
-
-    if (game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined) {
-        scoreHome = game.score.fullTime.home;
-        scoreAway = game.score.fullTime.away;
-        isFinished = game.status === "FINISHED";
-        isLive = game.status === "IN_PLAY" || game.status === "PAUSED";
-    }
-
-    const scoreText = (isLive || isFinished) ? `${scoreHome} - ${scoreAway}` : "vs";
+    const scoreText = (isLive || isFinished) ? `${escapeHTML(scoreHome)} - ${escapeHTML(scoreAway)}` : "vs";
     
     let timeDisplay = "";
     if (game.utcDate) {
@@ -375,11 +375,12 @@ export const createExplorerMatchCard = (game) => {
         const istTime = formatToIST(game.local_date, game.stadium_id || game.stadium, game.id);
         timeDisplay = istTime.time;
     }
+    timeDisplay = escapeHTML(timeDisplay);
 
     let badgeHTML = "";
     if (isLive) {
         const minVal = liveState ? liveState.minute : game.time_elapsed;
-        badgeHTML = `<span class="match-status-badge live">Live - ${minVal}'</span>`;
+        badgeHTML = `<span class="match-status-badge live">Live - ${escapeHTML(minVal)}'</span>`;
     } else if (isFinished) {
         badgeHTML = `<span class="match-status-badge finished">Finished</span>`;
     } else {
@@ -388,23 +389,27 @@ export const createExplorerMatchCard = (game) => {
 
     const hName = game.homeTeam?.name || game.home_team_name_en || "TBD";
     const aName = game.awayTeam?.name || game.away_team_name_en || "TBD";
+    const displayHName = escapeHTML(hName);
+    const displayAName = escapeHTML(aName);
+    const displayGroup = game.group ? escapeHTML(game.group.replace("GROUP_", "")) : "Knockout";
+    const displayStadium = escapeHTML(getStadiumName(game.stadium_id || game.stadium));
 
     card.innerHTML = `
         <div class="m-card-teams">
             <div class="m-card-team-row">
                 ${getWcTeamFlagHTML(hName, "m-card-flag")}
-                <span class="m-card-team-name">${hName}</span>
+                <span class="m-card-team-name">${displayHName}</span>
             </div>
             <div class="m-card-team-row">
                 ${getWcTeamFlagHTML(aName, "m-card-flag")}
-                <span class="m-card-team-name">${aName}</span>
+                <span class="m-card-team-name">${displayAName}</span>
             </div>
         </div>
         <div class="m-card-score-box" style="width: 50%; align-items: flex-end; justify-content: center; gap: 4px;">
             <span class="m-card-score" style="font-size: 15px;">${scoreText}</span>
             <span class="m-card-meta" style="margin-top: 2px; text-align: right; line-height: 1.3;">
-                Group ${game.group ? game.group.replace("GROUP_", "") : "Knockout"} • ${timeDisplay}<br>
-                <small style="color: var(--text-muted); font-size: 8.5px;">🏟️ ${getStadiumName(game.stadium_id || game.stadium)}</small>
+                Group ${displayGroup} • ${timeDisplay}<br>
+                <small style="color: var(--text-muted); font-size: 8.5px;">🏟️ ${displayStadium}</small>
             </span>
             ${badgeHTML}
         </div>
