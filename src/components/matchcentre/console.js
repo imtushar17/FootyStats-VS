@@ -294,7 +294,7 @@ export const updateConsoleDetails = (game) => {
     const liveState = state.liveStates[game.id];
     if (!liveState) return;
 
-    const isUpcoming = (game.status === "TIMED" || game.status === "SCHEDULED" || (game.finished === "FALSE" && game.time_elapsed === "notstarted"));
+    const isUpcoming = isMatchUpcoming(game);
     const navTabs = document.getElementById("console-tabs-nav");
     const prematchHub = document.getElementById("console-prematch-hub");
 
@@ -390,12 +390,13 @@ export const updateConsoleDetails = (game) => {
     const timeEl = document.getElementById("console-time");
     if (timeEl) {
         timeEl.className = "console-time-elapsed";
-        const status = details?.status || game.status;
-        if (status === "FINISHED") {
+        const isFinished = isMatchFinished(game);
+        const isLive = isMatchLive(game);
+        if (isFinished) {
             timeEl.textContent = "Finished";
             timeEl.classList.add("status-finished");
-        } else if (status === "IN_PLAY" || status === "PAUSED") {
-            timeEl.textContent = status === "PAUSED" ? "HT" : "Live";
+        } else if (isLive) {
+            timeEl.textContent = game.status === "PAUSED" ? "HT" : "Live";
             timeEl.classList.add("status-live");
         } else {
             timeEl.textContent = "Upcoming";

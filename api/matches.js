@@ -64,7 +64,7 @@ module.exports = async (req, res) => {
         } else {
             // For the general calendar/all matches feed, cache for 1 hour, or 24 hours if all matches are finished
             const matches = data?.Results || [];
-            const allFinished = matches.length > 0 && matches.every(m => m.Period === 10);
+            const allFinished = matches.length > 0 && matches.every(m => m.MatchStatus === 0 || m.Period === 10);
             if (allFinished) {
                 cacheDurationSeconds = 86400;
             } else {

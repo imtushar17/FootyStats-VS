@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getWcTeamFlagHTML } from './utils.js';
+import { getWcTeamFlagHTML, isMatchFinished, getGameScore } from './utils.js';
 
 
 export const aggregateGroupStandings = (groupName) => {
@@ -25,19 +25,10 @@ export const aggregateGroupStandings = (groupName) => {
         let isPlayed = false;
 
         // Dynamic checking for API proxy score or legacy score
-        if (game.score?.fullTime?.home !== null && game.score?.fullTime?.home !== undefined) {
-            scoreH = game.score.fullTime.home;
-            scoreA = game.score.fullTime.away;
-            isPlayed = game.status === "FINISHED";
-        } else if (liveState) {
-            scoreH = liveState.scoreHome;
-            scoreA = liveState.scoreAway;
-            isPlayed = game.finished === "TRUE" || (game.finished === "FALSE" && game.time_elapsed !== "notstarted");
-        } else {
-            scoreH = parseInt(game.home_score) || 0;
-            scoreA = parseInt(game.away_score) || 0;
-            isPlayed = game.finished === "TRUE";
-        }
+        const scoreVal = getGameScore(game);
+        scoreH = scoreVal.home !== null ? scoreVal.home : 0;
+        scoreA = scoreVal.away !== null ? scoreVal.away : 0;
+        isPlayed = isMatchFinished(game) || (liveState && liveState.finished);
 
         if (isPlayed) {
             teamsMap[h].p++;
