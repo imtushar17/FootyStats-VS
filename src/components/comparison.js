@@ -29,30 +29,13 @@ export const animateCount = (element, start, end, duration, formatFn = val => va
 };
 
 export const fetchLiveRankings = async () => {
-    const FIFA_API_URL = 'https://api.fifa.com/api/v3/fifarankings/rankings/live?gender=1&sportType=0&language=en';
-    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(FIFA_API_URL)}`;
-
-    const FIFA_API_NAME_MAP = {
-        'South Korea': 'Korea Republic',
-        'USA': 'USA',
-    };
-
-    const tryFetch = async (url, useProxy) => {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        return useProxy ? JSON.parse(data.contents) : data;
-    };
-
     try {
-        let fifaData;
-        try {
-            console.log('Fetching live FIFA rankings from official FIFA API...');
-            fifaData = await tryFetch(FIFA_API_URL, false);
-        } catch (directErr) {
-            console.warn('Direct FIFA API request failed (likely CORS), trying proxy...', directErr.message);
-            fifaData = await tryFetch(PROXY_URL, true);
+        console.log('Fetching live FIFA rankings from local rankings proxy...');
+        const response = await fetch('/api/rankings');
+        if (!response.ok) {
+            throw new Error(`Proxy returned HTTP ${response.status}`);
         }
+        const fifaData = await response.json();
 
         if (!fifaData || !Array.isArray(fifaData.Results)) {
             throw new Error('Unexpected FIFA API response format');
@@ -70,13 +53,30 @@ export const fetchLiveRankings = async () => {
         }
 
         let matchedCount = 0;
+        
+        // Expanded to match your application's normalized team list
+        const FIFA_API_NAME_MAP = {
+            'South Korea': 'Korea Republic',
+            'USA': 'USA',
+            'Turkey': 'Türkiye',
+            'Iran': 'IR Iran',
+            'Cape Verde': 'Cabo Verde',
+            'DR Congo': 'Congo DR',
+            'Ivory Coast': "Côte d'Ivoire"
+        };
+
         for (const key in teamData) {
             const officialName = (FIFA_API_NAME_MAP[key] || key).toLowerCase();
             const rankData = apiLookup[officialName];
 
             if (rankData) {
-                if (rankData.rank) teamData[key].fifaRanking = rankData.rank;
-                if (rankData.points) teamData[key].rankingPoints = rankData.points;
+                // Defensive checking: ensures 0 values aren't dropped by falsy checks
+                if (rankData.rank !== undefined && rankData.rank !== null) {
+                    teamData[key].fifaRanking = rankData.rank;
+                }
+                if (rankData.points !== undefined && rankData.points !== null) {
+                    teamData[key].rankingPoints = rankData.points;
+                }
                 matchedCount++;
             }
         }
