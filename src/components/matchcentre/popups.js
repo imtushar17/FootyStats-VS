@@ -377,8 +377,41 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
         return list;
     };
 
+    const getBenchList = (apiPlayers, isAwayTeam) => {
+        let list = [];
+        if (apiPlayers.length > 0) {
+            list = apiPlayers.filter(p => p.Status === 2).map(p => {
+                const posStr = String(p.Position);
+                let pos = "MID";
+                if (posStr === "0") pos = "GK";
+                else if (posStr === "1") pos = "DEF";
+                else if (posStr === "2") pos = "MID";
+                else if (posStr === "3") pos = "FWD";
+                return {
+                    name: p.Name?.[0]?.Description || p.ShortClubName || "Player",
+                    shirt: String(p.ShirtNumber || ""),
+                    pos: pos,
+                    picture: p.PictureUrl || ""
+                };
+            });
+        } else {
+            const legacyBench = isAwayTeam ? state.currentSelectedMatchDetails?.awayTeam?.bench : state.currentSelectedMatchDetails?.homeTeam?.bench;
+            if (Array.isArray(legacyBench)) {
+                list = legacyBench.map(p => ({
+                    name: p.name || "Player",
+                    shirt: String(p.shirt || ""),
+                    pos: getPositionCategory(p.position),
+                    picture: p.picture || ""
+                }));
+            }
+        }
+        return list;
+    };
+
     const homeStarters = getPlayersList(homeApiPlayers, false);
     const awayStarters = getPlayersList(awayApiPlayers, true);
+    const homeSubs = getBenchList(homeApiPlayers, false);
+    const awaySubs = getBenchList(awayApiPlayers, true);
 
     const getLeftPercentage = (count, idx) => {
         if (count === 1) return 50;
@@ -417,19 +450,27 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
         playerEvents.forEach(evt => {
             const type = evt.Type;
             if (type === 0) {
-                eventBadges.push(`<span class="event-badge goal-badge" title="Goal">⚽</span>`);
+                eventBadges.push({ type: 'goal', html: `<span class="event-badge goal-badge" title="Goal">⚽</span>`, priority: 2 });
             } else if (type === 2) {
-                eventBadges.push(`<span class="event-badge yellow-card-badge" title="Yellow Card">🟨</span>`);
+                eventBadges.push({ type: 'yellow', html: `<span class="event-badge yellow-card-badge" title="Yellow Card">🟨</span>`, priority: 3 });
             } else if (type === 3 || type === 9) {
-                eventBadges.push(`<span class="event-badge red-card-badge" title="Red Card">🟥</span>`);
+                eventBadges.push({ type: 'red', html: `<span class="event-badge red-card-badge" title="Red Card">🟥</span>`, priority: 1 });
             } else if (type === 5) {
-                eventBadges.push(`<span class="event-badge sub-badge" title="Substituted">🔄</span>`);
+                eventBadges.push({ type: 'sub', html: `<span class="event-badge sub-badge" title="Substituted">🔄</span>`, priority: 4 });
             }
         });
 
         if (eventBadges.length > 0) {
-            const uniqueBadges = Array.from(new Set(eventBadges));
-            badgesHTML = `<div class="event-badges-container">${uniqueBadges.join("")}</div>`;
+            eventBadges.sort((a, b) => a.priority - b.priority);
+            const seenTypes = new Set();
+            const uniqueHTMLs = [];
+            eventBadges.forEach(b => {
+                if (!seenTypes.has(b.type)) {
+                    seenTypes.add(b.type);
+                    uniqueHTMLs.push(b.html);
+                }
+            });
+            badgesHTML = `<div class="event-badges-container">${uniqueHTMLs.join("")}</div>`;
         }
 
         const avatarHTML = escapedPicture
@@ -568,6 +609,87 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
         let left = getLeftPercentage(awayFWD.length, idx);
         appendVerticalPlayerNode(p, left, 56, awayColor, awaySecondaryColor, false);
     });
+
+    const renderSubsColumn = (listContainer, subs, teamColor, teamSecondaryColor) => {
+        if (!listContainer) return;
+        listContainer.innerHTML = "";
+
+        subs.forEach(player => {
+            const safePlayerId = player.name.replace(/\s+/g, '-').toLowerCase();
+            const escapedName = escapeHTML(player.name);
+            const escapedShirt = escapeHTML(player.shirt);
+            const surname = escapeHTML(player.name.split(" ").pop());
+            const escapedPicture = player.picture ? escapeHTML(player.picture) : "";
+
+            let badgesHTML = "";
+            const playerEvents = timelineEvents.filter(e => {
+                const desc = (e.EventDescription?.[0]?.Description || "").toLowerCase();
+                return desc.includes(player.name.toLowerCase()) || desc.includes(surname.toLowerCase());
+            });
+
+            let eventBadges = [];
+            playerEvents.forEach(evt => {
+                const type = evt.Type;
+                if (type === 0) {
+                    eventBadges.push({ type: 'goal', html: `<span class="event-badge goal-badge" title="Goal">⚽</span>`, priority: 2 });
+                } else if (type === 2) {
+                    eventBadges.push({ type: 'yellow', html: `<span class="event-badge yellow-card-badge" title="Yellow Card">🟨</span>`, priority: 3 });
+                } else if (type === 3 || type === 9) {
+                    eventBadges.push({ type: 'red', html: `<span class="event-badge red-card-badge" title="Red Card">🟥</span>`, priority: 1 });
+                } else if (type === 5) {
+                    eventBadges.push({ type: 'sub', html: `<span class="event-badge sub-badge" title="Substituted">🔄</span>`, priority: 4 });
+                }
+            });
+
+            if (eventBadges.length > 0) {
+                eventBadges.sort((a, b) => a.priority - b.priority);
+                const seenTypes = new Set();
+                const uniqueHTMLs = [];
+                eventBadges.forEach(b => {
+                    if (!seenTypes.has(b.type)) {
+                        seenTypes.add(b.type);
+                        uniqueHTMLs.push(b.html);
+                    }
+                });
+                badgesHTML = `<div class="sub-event-badges">${uniqueHTMLs.join("")}</div>`;
+            }
+
+            const subItem = document.createElement("div");
+            subItem.className = "sub-item";
+
+            const avatarHTML = escapedPicture
+                ? `<div class="sub-avatar-crop" style="border: 1.5px solid ${teamColor};">
+                     <img src="${escapedPicture}" class="sub-avatar-img" alt="${escapedName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                     <div class="sub-avatar-fallback" style="display: none; width: 100%; height: 100%;">
+                         <svg class="sub-jersey-svg" viewBox="0 0 100 100">
+                             <rect width="100" height="100" fill="${teamColor}" />
+                             <text x="50" y="65" fill="${teamSecondaryColor}" font-size="36" font-family="var(--font-heading)" font-weight="900" text-anchor="middle">${escapedShirt}</text>
+                         </svg>
+                     </div>
+                   </div>`
+                : `<div class="sub-avatar-crop" style="border: 1.5px solid ${teamColor};">
+                     <svg class="sub-jersey-svg" viewBox="0 0 100 100">
+                         <rect width="100" height="100" fill="${teamColor}" />
+                         <text x="50" y="65" fill="${teamSecondaryColor}" font-size="36" font-family="var(--font-heading)" font-weight="900" text-anchor="middle">${escapedShirt}</text>
+                     </svg>
+                   </div>`;
+
+            subItem.innerHTML = `
+                <div class="sub-player-info">
+                    ${avatarHTML}
+                    <span class="sub-shirt">${escapedShirt}</span>
+                    <span class="sub-name">${surname}</span>
+                </div>
+                ${badgesHTML}
+            `;
+            listContainer.appendChild(subItem);
+        });
+    };
+
+    const homeSubsContainer = pitchContainer.querySelector("#popup-home-subs-list");
+    const awaySubsContainer = pitchContainer.querySelector("#popup-away-subs-list");
+    renderSubsColumn(homeSubsContainer, homeSubs, homeColor, homeSecondaryColor);
+    renderSubsColumn(awaySubsContainer, awaySubs, awayColor, awaySecondaryColor);
 };
 
 export const openMatchDetailPopup = async (game) => {

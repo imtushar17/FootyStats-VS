@@ -2242,4 +2242,113 @@ body.dark-theme .popup-event-row {
     transform: translateY(-0.5px) !important;
 }
 
+/* Split-Screen Substitute Bench Layout & Grid Styling */
+.subs-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+    scroll-snap-align: start;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow-md);
+}
+
+.subs-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.subs-header {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 850;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 4px;
+    margin: 0;
+}
+
+.subs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sub-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.sub-item:hover {
+    background: var(--card-hover-bg);
+}
+
+.sub-player-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.sub-avatar-crop {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    background: #1e293b;
+    flex-shrink: 0;
+}
+
+.sub-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scale(2.4);
+    transform-origin: center 8%;
+}
+
+.sub-jersey-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.sub-shirt {
+    font-family: var(--font-heading);
+    font-size: 10px;
+    font-weight: 900;
+    color: var(--text-muted);
+    min-width: 14px;
+}
+
+.sub-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.sub-event-badges {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 
