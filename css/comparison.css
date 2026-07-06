@@ -286,3 +286,155 @@ body.dark-theme .stat-item.highlight-win {
 body.dark-theme .stat-item.highlight-win .stat-value {
     color: var(--accent-blue);
 }
+
+/* Match Hub World Cup Tab Styling */
+.wc-matches-tab-container {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    width: 100%;
+    margin-top: 15px;
+}
+.wc-team-matches-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.wc-col-title {
+    font-family: var(--font-heading);
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--text-light);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1.5px solid var(--border-color);
+    padding-bottom: 10px;
+}
+.wc-col-flag-img {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.wc-matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.wc-match-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.wc-match-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+.wc-card-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.wc-card-meta-text {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+.wc-card-status-badge {
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 2.5px 6.5px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+.wc-card-status-badge.upcoming {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+}
+.wc-card-status-badge.live {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    animation: pulse 1.5s infinite;
+}
+.wc-card-status-badge.finished {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+.wc-card-teams-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.wc-card-team-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+.wc-card-team-info.right-aligned {
+    justify-content: flex-end;
+    text-align: right;
+}
+.wc-card-flag {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.wc-card-team-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wc-card-team-name.highlight {
+    color: var(--text-light);
+    font-weight: 800;
+}
+.wc-card-score-box {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--text-light);
+    min-width: 48px;
+    text-align: center;
+}
+.wc-matches-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 30px;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+}
+@media (max-width: 768px) {
+    .wc-matches-tab-container {
+        flex-direction: column;
+        gap: 24px;
+    }
+}

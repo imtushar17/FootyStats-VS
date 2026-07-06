@@ -109,6 +109,13 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"></path></svg>
                         <span>Trophies</span>
                     </button>
+                    <button type="button" class="tab-btn" data-tab="wc2026">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        <span>Match Hub</span>
+                    </button>
                     <div class="tab-slider"></div>
                 </div>
             </div>
@@ -233,6 +240,26 @@
                             <div class="cabinet-shelves" id="cabinet-t2-shelves">
                                 <!-- Rendered dynamically by JS -->
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- World Cup 2026 Match Hub Tab Panel -->
+                <div class="tab-panel" id="panel-wc2026">
+                    <div class="wc-matches-tab-container">
+                        <!-- Left Team Column -->
+                        <div class="wc-team-matches-col" id="wc-matches-team1">
+                            <h3 class="wc-col-title">
+                                <span id="wc-m-t1-flag"></span> <span id="wc-m-t1-name"></span>
+                            </h3>
+                            <div class="wc-matches-list" id="wc-m-t1-list"></div>
+                        </div>
+                        <!-- Right Team Column -->
+                        <div class="wc-team-matches-col" id="wc-matches-team2">
+                            <h3 class="wc-col-title">
+                                <span id="wc-m-t2-flag"></span> <span id="wc-m-t2-name"></span>
+                            </h3>
+                            <div class="wc-matches-list" id="wc-m-t2-list"></div>
                         </div>
                     </div>
                 </div>

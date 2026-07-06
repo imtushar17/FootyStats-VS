@@ -2,6 +2,7 @@ import { initTheme, setupThemeListeners } from './components/theme.js';
 import { setupSelectorListeners } from './components/selector.js';
 import { setupComparisonForm, fetchLiveRankings, fetchLiveTopScorers } from './components/comparison.js';
 import { drawTacticsPitch } from './components/tactics.js';
+import { drawWorldCupMatchesTab } from './components/worldCupTab.js';
 import { setupTrophyListeners } from './components/trophies.js';
 import { setupLiveArenaListeners, activateLiveArena, deactivateLiveArena } from './components/liveArena.js';
 
@@ -53,6 +54,12 @@ const setupTabListeners = () => {
                 const t1 = team1Input?.value;
                 const t2 = team2Input?.value;
                 if (t1 && t2) drawTacticsPitch(t1, t2);
+            }
+
+            if (btn.dataset.tab === 'wc2026') {
+                const t1 = team1Input?.value;
+                const t2 = team2Input?.value;
+                if (t1 && t2) drawWorldCupMatchesTab(t1, t2);
             }
 
             if (btn.dataset.tab === 'compare') {
