@@ -276,7 +276,8 @@ export const mapFifaMatch = (m) => {
     // Map stage
     let stage = "GROUP_STAGE";
     const stageDesc = m.StageName?.[0]?.Description || m.StageName?.Description || "";
-    if (stageDesc.includes("Round of 16") || stageDesc.includes("Round of 32")) stage = "ROUND_OF_16";
+    if (stageDesc.includes("Round of 32")) stage = "ROUND_OF_32";
+    else if (stageDesc.includes("Round of 16")) stage = "ROUND_OF_16";
     else if (stageDesc.includes("Quarter-finals")) stage = "QUARTER_FINALS";
     else if (stageDesc.includes("Semi-finals")) stage = "SEMI_FINALS";
     else if (stageDesc.includes("Play-off for third place") || stageDesc.includes("Third place")) stage = "THIRD_PLACE";
