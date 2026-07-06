@@ -483,15 +483,15 @@
 
     <!-- Match Detail Popup Overlay -->
     <div class="explorer-overlay" id="match-detail-overlay" style="z-index: 20000 !important;">
-        <div class="explorer-box match-detail-box" style="max-width: 480px; width: 90vw; max-height: 85vh;">
-            <div class="explorer-header">
-                <h3>Match Details</h3>
-                <button type="button" class="explorer-close-btn" id="match-detail-close">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <div class="explorer-box match-detail-box">
+            <div class="match-detail-header" id="match-detail-header">
+                <button type="button" class="match-detail-back-btn" id="match-detail-close" aria-label="Go Back">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                 </button>
+                <h3 class="match-detail-title">Match Details</h3>
             </div>
-            <div class="match-detail-popup-body" id="match-detail-popup-body" style="overflow-y: auto; max-height: 70vh; padding: 12px 6px;">
-                <!-- Rendered score + scorers list dynamically -->
+            <div class="match-detail-popup-body" id="match-detail-popup-body">
+                <div class="soccer-pitch-vertical" id="soccer-pitch-vertical-preview"></div>
             </div>
         </div>
     </div>
