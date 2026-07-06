@@ -128,7 +128,29 @@ export const drawLineupPitch = (game, selectedTeamName) => {
             const escapedPicture = player.picture ? escapeHTML(player.picture) : "";
             const avatarHTML = escapedPicture
                 ? `<div class="player-pitch-avatar-wrapper" style="border: 2px solid ${primaryColor};">
-                     <img src="${escapedPicture}" class="player-pitch-avatar" alt="${escapedName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                     <div class="player-pitch-avatar-crop">
+                         <img src="${escapedPicture}" class="player-pitch-avatar" alt="${escapedName}" onerror="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='block';" />
+                     </div>
+                     <div class="player-fallback-jersey" style="display: none; width: 100%; height: 100%;">
+                         <svg class="player-jersey-svg" viewBox="0 0 100 100">
+                             <filter id="lineup-jersey-shadow-${escapeHTML(safePlayerId)}" x="-15%" y="-15%" width="130%" height="130%">
+                                 <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-opacity="0.35"/>
+                             </filter>
+                             <defs>
+                                 <linearGradient id="lineup-jersey-grad-${escapeHTML(safePlayerId)}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                     <stop offset="0%" stop-color="${primaryColor}"/>
+                                     <stop offset="100%" stop-color="color-mix(in srgb, ${primaryColor} 65%, #000000)"/>
+                                 </linearGradient>
+                             </defs>
+                             <g filter="url(#lineup-jersey-shadow-${escapeHTML(safePlayerId)})">
+                                 <path d="M 12,38 L 28,22 L 40,32 L 28,50 Z" fill="${primaryColor}" stroke="${secondaryColor}" stroke-width="2.5"/>
+                                 <path d="M 88,38 L 72,22 L 60,32 L 72,50 Z" fill="${primaryColor}" stroke="${secondaryColor}" stroke-width="2.5"/>
+                                 <path d="M 28,32 L 72,32 L 72,88 L 28,88 Z" fill="url(#lineup-jersey-grad-${escapeHTML(safePlayerId)})" stroke="${secondaryColor}" stroke-width="3" stroke-linejoin="round"/>
+                                 <path d="M 40,32 A 10,10 0 0,0 60,32 Z" fill="${secondaryColor}"/>
+                             </g>
+                             <text class="jersey-number" x="50" y="66" fill="${secondaryColor}" font-size="24" font-family="var(--font-heading)" font-weight="900" text-anchor="middle">${escapedShirt}</text>
+                         </svg>
+                     </div>
                      <div class="player-pitch-avatar-number-badge" style="background: ${primaryColor}; color: ${secondaryColor};">${escapedShirt}</div>
                    </div>`
                 : `<svg class="player-jersey-svg" viewBox="0 0 100 100">

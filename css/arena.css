@@ -1785,7 +1785,7 @@ body.dark-theme .popup-tab-btn.active {
     width: 100%;
 }
 .popup-pitch-container .soccer-pitch {
-    aspect-ratio: 1.45;
+    aspect-ratio: 1.25 !important;
     border-radius: 16px;
     border-width: 2px;
     box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.4);

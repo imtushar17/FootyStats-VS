@@ -136,6 +136,9 @@ window.addEventListener('DOMContentLoaded', () => {
     
     setupTabListeners();
     setupGatewayListeners();
+
+    // Fetch live FIFA rankings immediately on application load
+    fetchLiveRankings();
 });
 
 // Calculate tab slider position after custom web fonts are fully loaded
