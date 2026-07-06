@@ -327,6 +327,249 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
     }
 };
 
+const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents) => {
+    if (!pitchContainer) return;
+
+    const homeTeamObj = state.currentSelectedMatchDetails?.HomeTeam;
+    const awayTeamObj = state.currentSelectedMatchDetails?.AwayTeam;
+
+    const homeApiPlayers = homeTeamObj?.Players || [];
+    const awayApiPlayers = awayTeamObj?.Players || [];
+
+    const getPositionCategory = (posStr) => {
+        if (!posStr) return "MID";
+        const clean = posStr.toUpperCase();
+        if (clean.includes("GOAL") || clean.includes("KEEPER") || clean === "GK") return "GK";
+        if (clean.includes("DEFENCE") || clean.includes("DEFENDER") || clean.includes("BACK") || clean === "DF") return "DEF";
+        if (clean.includes("MIDFIELD") || clean.includes("MIDFIELDER") || clean === "MF") return "MID";
+        if (clean.includes("OFFENCE") || clean.includes("FORWARD") || clean.includes("STRIKER") || clean.includes("WING") || clean === "FW" || clean === "ST") return "FWD";
+        return "MID";
+    };
+
+    const getPlayersList = (apiPlayers, isAwayTeam) => {
+        let list = [];
+        if (apiPlayers.length > 0) {
+            list = apiPlayers.filter(p => p.Status === 1).map(p => {
+                const posStr = String(p.Position);
+                let pos = "MID";
+                if (posStr === "0") pos = "GK";
+                else if (posStr === "1") pos = "DEF";
+                else if (posStr === "2") pos = "MID";
+                else if (posStr === "3") pos = "FWD";
+                return {
+                    name: p.Name?.[0]?.Description || p.ShortClubName || "Player",
+                    shirt: String(p.ShirtNumber || ""),
+                    pos: pos,
+                    picture: p.PictureUrl || ""
+                };
+            });
+        } else {
+            const legacyLineup = isAwayTeam ? state.currentSelectedMatchDetails?.awayTeam?.lineup : state.currentSelectedMatchDetails?.homeTeam?.lineup;
+            if (Array.isArray(legacyLineup)) {
+                list = legacyLineup.map(p => ({
+                    name: p.name || "Player",
+                    shirt: String(p.shirt || ""),
+                    pos: getPositionCategory(p.position),
+                    picture: p.picture || ""
+                }));
+            }
+        }
+        return list;
+    };
+
+    const homeStarters = getPlayersList(homeApiPlayers, false);
+    const awayStarters = getPlayersList(awayApiPlayers, true);
+
+    const getLeftPercentage = (count, idx) => {
+        if (count === 1) return 50;
+        const minLeft = 15;
+        const maxLeft = 85;
+        return minLeft + (idx / (count - 1)) * (maxLeft - minLeft);
+    };
+
+    const jerseysContainer = pitchContainer.querySelector("#popup-vertical-pitch-jerseys");
+    if (!jerseysContainer) return;
+    jerseysContainer.innerHTML = "";
+
+    const appendVerticalPlayerNode = (player, leftPct, topPct, teamColor, teamSecondaryColor, isMidfielder) => {
+        const node = document.createElement("div");
+        node.className = "player-node";
+        node.style.left = `${leftPct}%`;
+        node.style.top = `${topPct}%`;
+        
+        if (isMidfielder) {
+            node.style.zIndex = "10";
+        }
+
+        const safePlayerId = player.name.replace(/\s+/g, '-').toLowerCase();
+        const escapedName = escapeHTML(player.name);
+        const escapedShirt = escapeHTML(player.shirt);
+        const surname = escapeHTML(player.name.split(" ").pop());
+        const escapedPicture = player.picture ? escapeHTML(player.picture) : "";
+
+        let badgesHTML = "";
+        const playerEvents = timelineEvents.filter(e => {
+            const desc = (e.EventDescription?.[0]?.Description || "").toLowerCase();
+            return desc.includes(player.name.toLowerCase()) || desc.includes(surname.toLowerCase());
+        });
+
+        let eventBadges = [];
+        playerEvents.forEach(evt => {
+            const type = evt.Type;
+            if (type === 0) {
+                eventBadges.push(`<span class="event-badge goal-badge" title="Goal">⚽</span>`);
+            } else if (type === 2) {
+                eventBadges.push(`<span class="event-badge yellow-card-badge" title="Yellow Card">🟨</span>`);
+            } else if (type === 3 || type === 9) {
+                eventBadges.push(`<span class="event-badge red-card-badge" title="Red Card">🟥</span>`);
+            } else if (type === 5) {
+                eventBadges.push(`<span class="event-badge sub-badge" title="Substituted">🔄</span>`);
+            }
+        });
+
+        if (eventBadges.length > 0) {
+            const uniqueBadges = Array.from(new Set(eventBadges));
+            badgesHTML = `<div class="event-badges-container">${uniqueBadges.join("")}</div>`;
+        }
+
+        const avatarHTML = escapedPicture
+            ? `<div class="player-pitch-avatar-wrapper" style="border: 2px solid ${teamColor};">
+                 <div class="player-pitch-avatar-crop">
+                     <img src="${escapedPicture}" class="player-pitch-avatar" alt="${escapedName}" onerror="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='block';" />
+                 </div>
+                 <div class="player-fallback-jersey" style="display: none; width: 100%; height: 100%;">
+                     <svg class="player-jersey-svg" viewBox="0 0 100 100">
+                         <filter id="v-jersey-shadow-${escapeHTML(safePlayerId)}" x="-15%" y="-15%" width="130%" height="130%">
+                             <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-opacity="0.35"/>
+                         </filter>
+                         <defs>
+                             <linearGradient id="v-jersey-grad-${escapeHTML(safePlayerId)}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                 <stop offset="0%" stop-color="${teamColor}"/>
+                                 <stop offset="100%" stop-color="color-mix(in srgb, ${teamColor} 65%, #000000)"/>
+                             </linearGradient>
+                         </defs>
+                         <g filter="url(#v-jersey-shadow-${escapeHTML(safePlayerId)})">
+                             <path d="M 12,38 L 28,22 L 40,32 L 28,50 Z" fill="${teamColor}" stroke="${teamSecondaryColor}" stroke-width="2.5"/>
+                             <path d="M 88,38 L 72,22 L 60,32 L 72,50 Z" fill="${teamColor}" stroke="${teamSecondaryColor}" stroke-width="2.5"/>
+                             <path d="M 28,32 L 72,32 L 72,88 L 28,88 Z" fill="url(#v-jersey-grad-${escapeHTML(safePlayerId)})" stroke="${teamSecondaryColor}" stroke-width="3" stroke-linejoin="round"/>
+                             <path d="M 40,32 A 10,10 0 0,0 60,32 Z" fill="${teamSecondaryColor}"/>
+                         </g>
+                         <text class="jersey-number" x="50" y="66" fill="${teamSecondaryColor}" font-size="24" font-family="var(--font-heading)" font-weight="900" text-anchor="middle">${escapedShirt}</text>
+                     </svg>
+                 </div>
+                 <div class="player-pitch-avatar-number-badge" style="background: #ffffff; color: #000000; border: 1.5px solid ${teamColor};">${escapedShirt}</div>
+                 ${badgesHTML}
+               </div>`
+            : `<div class="player-pitch-avatar-wrapper" style="border: 2px solid ${teamColor};">
+                 <svg class="player-jersey-svg" viewBox="0 0 100 100">
+                     <filter id="v-jersey-shadow-${escapeHTML(safePlayerId)}" x="-15%" y="-15%" width="130%" height="130%">
+                         <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-opacity="0.35"/>
+                     </filter>
+                     <defs>
+                         <linearGradient id="v-jersey-grad-${escapeHTML(safePlayerId)}" x1="0%" y1="0%" x2="100%" y2="100%">
+                             <stop offset="0%" stop-color="${teamColor}"/>
+                             <stop offset="100%" stop-color="color-mix(in srgb, ${teamColor} 65%, #000000)"/>
+                         </linearGradient>
+                     </defs>
+                     <g filter="url(#v-jersey-shadow-${escapeHTML(safePlayerId)})">
+                         <path d="M 12,38 L 28,22 L 40,32 L 28,50 Z" fill="${teamColor}" stroke="${teamSecondaryColor}" stroke-width="2.5"/>
+                         <path d="M 88,38 L 72,22 L 60,32 L 72,50 Z" fill="${teamColor}" stroke="${teamSecondaryColor}" stroke-width="2.5"/>
+                         <path d="M 28,32 L 72,32 L 72,88 L 28,88 Z" fill="url(#v-jersey-grad-${escapeHTML(safePlayerId)})" stroke="${teamSecondaryColor}" stroke-width="3" stroke-linejoin="round"/>
+                         <path d="M 40,32 A 10,10 0 0,0 60,32 Z" fill="${teamSecondaryColor}"/>
+                     </g>
+                     <text class="jersey-number" x="50" y="66" fill="${teamSecondaryColor}" font-size="24" font-family="var(--font-heading)" font-weight="900" text-anchor="middle">${escapedShirt}</text>
+                 </svg>
+                 <div class="player-pitch-avatar-number-badge" style="background: #ffffff; color: #000000; border: 1.5px solid ${teamColor};">${escapedShirt}</div>
+                 ${badgesHTML}
+               </div>`;
+
+        node.innerHTML = `
+            <div class="jersey-wrapper">
+                ${avatarHTML}
+            </div>
+            <div class="player-node-label-container" style="margin-top: 3px; display: flex; flex-direction: column; align-items: center;">
+                <span class="player-node-label" style="font-size: 8.5px; padding: 1px 4px; white-space: nowrap; text-align: center; font-weight: 700; color: #ffffff; background: rgba(0,0,0,0.5); border-radius: 4px;">${surname}</span>
+            </div>
+        `;
+        jerseysContainer.appendChild(node);
+    };
+
+    const homeData = getTeamData(hName) || {};
+    const awayData = getTeamData(aName) || {};
+    const homeColor = homeData.primaryColor || "#3b82f6";
+    const homeSecondaryColor = homeData.secondaryColor || "#ffffff";
+    const awayColor = awayData.primaryColor || "#ef4444";
+    const awaySecondaryColor = awayData.secondaryColor || "#ffffff";
+
+    const homeGK = homeStarters.filter(p => p.pos === "GK");
+    const homeDEF = homeStarters.filter(p => p.pos === "DEF");
+    const homeMID = homeStarters.filter(p => p.pos === "MID");
+    const homeFWD = homeStarters.filter(p => p.pos === "FWD");
+
+    homeGK.forEach(p => appendVerticalPlayerNode(p, 50, 8, homeColor, homeSecondaryColor, false));
+
+    homeDEF.forEach((p, idx) => {
+        let left = getLeftPercentage(homeDEF.length, idx);
+        let top = 20;
+        if (homeDEF.length === 4) {
+            top = (idx === 0 || idx === 3) ? 22 : 17;
+        } else if (homeDEF.length === 3) {
+            top = (idx === 1) ? 17 : 22;
+        } else if (homeDEF.length === 5) {
+            top = (idx === 0 || idx === 4) ? 22 : (idx === 2 ? 17 : 19.5);
+        }
+        appendVerticalPlayerNode(p, left, top, homeColor, homeSecondaryColor, false);
+    });
+
+    homeMID.forEach((p, idx) => {
+        let left = getLeftPercentage(homeMID.length, idx);
+        let top = 32;
+        if (homeMID.length > 3) {
+            top = (idx % 2 === 0) ? 33.5 : 30.5;
+        }
+        appendVerticalPlayerNode(p, left, top, homeColor, homeSecondaryColor, true);
+    });
+
+    homeFWD.forEach((p, idx) => {
+        let left = getLeftPercentage(homeFWD.length, idx);
+        appendVerticalPlayerNode(p, left, 44, homeColor, homeSecondaryColor, false);
+    });
+
+    const awayGK = awayStarters.filter(p => p.pos === "GK");
+    const awayDEF = awayStarters.filter(p => p.pos === "DEF");
+    const awayMID = awayStarters.filter(p => p.pos === "MID");
+    const awayFWD = awayStarters.filter(p => p.pos === "FWD");
+
+    awayGK.forEach(p => appendVerticalPlayerNode(p, 50, 92, awayColor, awaySecondaryColor, false));
+
+    awayDEF.forEach((p, idx) => {
+        let left = getLeftPercentage(awayDEF.length, idx);
+        let top = 80;
+        if (awayDEF.length === 4) {
+            top = (idx === 0 || idx === 3) ? 78 : 83;
+        } else if (awayDEF.length === 3) {
+            top = (idx === 1) ? 83 : 78;
+        } else if (awayDEF.length === 5) {
+            top = (idx === 0 || idx === 4) ? 78 : (idx === 2 ? 83 : 80.5);
+        }
+        appendVerticalPlayerNode(p, left, top, awayColor, awaySecondaryColor, false);
+    });
+
+    awayMID.forEach((p, idx) => {
+        let left = getLeftPercentage(awayMID.length, idx);
+        let top = 68;
+        if (awayMID.length > 3) {
+            top = (idx % 2 === 0) ? 66.5 : 69.5;
+        }
+        appendVerticalPlayerNode(p, left, top, awayColor, awaySecondaryColor, true);
+    });
+
+    awayFWD.forEach((p, idx) => {
+        let left = getLeftPercentage(awayFWD.length, idx);
+        appendVerticalPlayerNode(p, left, 56, awayColor, awaySecondaryColor, false);
+    });
+};
+
 export const openMatchDetailPopup = async (game) => {
     const popup = document.getElementById("match-detail-overlay");
     const body = document.getElementById("match-detail-popup-body");
@@ -434,8 +677,7 @@ export const openMatchDetailPopup = async (game) => {
     const tabsNavHTML = `
         <div class="popup-tabs-nav">
             <button type="button" class="popup-tab-btn active" data-tab="overview">Overview</button>
-            <button type="button" class="popup-tab-btn" data-tab="home-lineup">Lineup: ${escapeHTML(hName.split(" ").pop())}</button>
-            <button type="button" class="popup-tab-btn" data-tab="away-lineup">Lineup: ${escapeHTML(aName.split(" ").pop())}</button>
+            <button type="button" class="popup-tab-btn" data-tab="lineups">Lineups</button>
             <button type="button" class="popup-tab-btn" data-tab="stats-events">Events & Stats</button>
         </div>
     `;
@@ -463,17 +705,21 @@ export const openMatchDetailPopup = async (game) => {
         </div>
     `;
 
-    const homeLineupHTML = `
-        <div class="popup-tab-content" id="popup-tab-home-lineup">
-            <div class="popup-pitch-container" id="popup-home-pitch"></div>
-            <div class="popup-bench-container" id="popup-home-bench" style="margin-top: 10px;"></div>
-        </div>
-    `;
-
-    const awayLineupHTML = `
-        <div class="popup-tab-content" id="popup-tab-away-lineup">
-            <div class="popup-pitch-container" id="popup-away-pitch"></div>
-            <div class="popup-bench-container" id="popup-away-bench" style="margin-top: 10px;"></div>
+    const lineupsHTML = `
+        <div class="popup-tab-content" id="popup-tab-lineups">
+            <div class="popup-pitch-container">
+                <div class="soccer-pitch-vertical" id="popup-vertical-pitch">
+                    <div class="pitch-line-center" style="position: absolute; top: 50%; left: 0; right: 0; height: 1.5px; background: rgba(255, 255, 255, 0.4); transform: translateY(-50%);"></div>
+                    <div class="pitch-circle-center" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22%; aspect-ratio: 1; border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 50%;"></div>
+                    <div class="pitch-area-penalty-top" style="position: absolute; top: 0; left: 20%; right: 20%; height: 15%; border: 1.5px solid rgba(255, 255, 255, 0.4); border-top: none; border-radius: 0 0 12px 12px;"></div>
+                    <div class="pitch-area-penalty-bottom" style="position: absolute; bottom: 0; left: 20%; right: 20%; height: 15%; border: 1.5px solid rgba(255, 255, 255, 0.4); border-bottom: none; border-radius: 12px 12px 0 0;"></div>
+                    <div class="pitch-area-goal-top" style="position: absolute; top: 0; left: 35%; right: 35%; height: 5%; border: 1.5px solid rgba(255, 255, 255, 0.4); border-top: none;"></div>
+                    <div class="pitch-area-goal-bottom" style="position: absolute; bottom: 0; left: 35%; right: 35%; height: 5%; border: 1.5px solid rgba(255, 255, 255, 0.4); border-bottom: none;"></div>
+                    <div class="pitch-spot-penalty-top" style="position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; background: rgba(255, 255, 255, 0.6); border-radius: 50%;"></div>
+                    <div class="pitch-spot-penalty-bottom" style="position: absolute; bottom: 10%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; background: rgba(255, 255, 255, 0.6); border-radius: 50%;"></div>
+                    <div class="lineup-jerseys-layer" id="popup-vertical-pitch-jerseys" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -490,7 +736,7 @@ export const openMatchDetailPopup = async (game) => {
         </button>
     `;
 
-    body.innerHTML = scoreboardHTML + tabsNavHTML + overviewHTML + homeLineupHTML + awayLineupHTML + statsEventsHTML + ctaHTML;
+    body.innerHTML = scoreboardHTML + tabsNavHTML + overviewHTML + lineupsHTML + statsEventsHTML + ctaHTML;
 
     // Attach Tab Switcher listener
     body.querySelectorAll(".popup-tab-btn").forEach(btn => {
@@ -504,11 +750,9 @@ export const openMatchDetailPopup = async (game) => {
         });
     });
 
-    // Render Home and Away lineups
-    const homePitchContainer = body.querySelector("#popup-home-pitch");
-    const awayPitchContainer = body.querySelector("#popup-away-pitch");
-    renderPopupLineupPitch(homePitchContainer, hName, false);
-    renderPopupLineupPitch(awayPitchContainer, aName, true);
+    // Render Starting XI on vertical pitch
+    const verticalPitchContainer = body.querySelector("#popup-tab-lineups");
+    renderPopupVerticalLineups(verticalPitchContainer, hName, aName, timelineEvents);
 
     // Populate Events & Stats
     const eventsListEl = body.querySelector("#popup-events-list");

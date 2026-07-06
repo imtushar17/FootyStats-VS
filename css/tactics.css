@@ -646,22 +646,65 @@ body.dark-theme .fut-portrait-silhouette {
     transform-origin: center 12%;
     transition: transform 0.25s ease;
 }
+/* Crop strictly on images inside the crop container to create headshots */
+.player-pitch-avatar-crop img.player-pitch-avatar {
+    transform: scale(2.4);
+    transform-origin: center 8%;
+}
+/* Exclude SVGs from headshot scaling so they don't pixelate */
+.player-pitch-avatar-wrapper svg.player-jersey-svg {
+    transform: none !important;
+    transform-origin: initial !important;
+}
 #lineups-pitch {
     aspect-ratio: 1.25 !important;
 }
 .player-pitch-avatar-number-badge {
     position: absolute;
-    bottom: -4px;
-    right: -4px;
-    width: 15px;
-    height: 15px;
+    top: -4px;
+    left: -4px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     font-size: 8px;
     font-weight: 900;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1.5px solid #0f172a;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    z-index: 2;
+    z-index: 5;
+}
+/* Badge Flexbox layout for goals/cards/subs side-by-side */
+.event-badges-container {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    z-index: 6;
+}
+.event-badge {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1.5px 3px rgba(0,0,0,0.35);
+    background: #ffffff;
+    color: #000000;
+}
+.event-badge.yellow-card-badge {
+    background: #eab308;
+    border-radius: 2px;
+    font-size: 7px;
+    font-weight: 800;
+}
+.event-badge.red-card-badge {
+    background: #ef4444;
+    border-radius: 2px;
+    font-size: 7px;
+    font-weight: 800;
 }
