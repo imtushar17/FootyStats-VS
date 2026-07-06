@@ -343,6 +343,8 @@ export const mapFifaMatch = (m) => {
         away_penalty_score: m.AwayTeamPenaltyScore !== null && m.AwayTeamPenaltyScore !== undefined ? String(m.AwayTeamPenaltyScore) : null,
         group: group || null,
         stage: stage,
+        PlaceHolderA: m.PlaceHolderA || null,
+        PlaceHolderB: m.PlaceHolderB || null,
         utcDate: m.Date || "",
         local_date: m.LocalDate ? m.LocalDate.replace("T", " ").substring(0, 16) : "",
         stadium_id: m.Stadium?.IdStadium || "1",

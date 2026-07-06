@@ -1,26 +1,30 @@
 import { state } from './state.js';
 import { getWcTeamFlagHTML, formatToIST, escapeHTML, isMatchFinished, isMatchLive, isMatchUpcoming, getGameScore } from './utils.js';
 
-export const getBracketPlaceholderName = (matchId, isAway) => {
+export const getBracketPlaceholderName = (game, isAway) => {
+    if (!game) return "TBD";
+    if (isAway && game.PlaceHolderB) return game.PlaceHolderB;
+    if (!isAway && game.PlaceHolderA) return game.PlaceHolderA;
+
     const mappings = {
         "89": ["W74", "W77"],
         "90": ["W73", "W75"],
         "91": ["W76", "W78"],
         "92": ["W79", "W80"],
-        "93": ["W83", "W84"], // Corrected pairings
-        "94": ["W81", "W82"], // Corrected pairings
-        "95": ["W85", "W86"],
-        "96": ["W87", "W88"],
+        "93": ["W83", "W84"],
+        "94": ["W81", "W82"],
+        "95": ["W86", "W88"], // Corrected pairings
+        "96": ["W85", "W87"], // Corrected pairings
         "97": ["W89", "W90"],
-        "98": ["W91", "W92"],
-        "99": ["W93", "W94"],
+        "98": ["W93", "W94"], // Corrected pairings
+        "99": ["W91", "W92"], // Corrected pairings
         "100": ["W95", "W96"],
         "101": ["W97", "W98"],
         "102": ["W99", "W100"],
         "104": ["W101", "W102"],
         "103": ["L101", "L102"]
     };
-    const pair = mappings[matchId];
+    const pair = mappings[game.id];
     if (pair) return pair[isAway ? 1 : 0];
     return "TBD";
 };
@@ -33,9 +37,9 @@ export const renderKnockoutBracket = (container) => {
     bracketWrapper.className = "bracket-wrapper";
 
     const columnRounds = [
-        { key: "r32", title: "Round of 32", className: "column-r32", ids: ["74", "77", "73", "75", "76", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88"] },
+        { key: "r32", title: "Round of 32", className: "column-r32", ids: ["74", "77", "73", "75", "76", "78", "79", "80", "81", "82", "83", "84", "86", "88", "85", "87"] },
         { key: "r16", title: "Round of 16", className: "column-r16", ids: ["89", "90", "91", "92", "94", "93", "95", "96"] }, // Swapped 93 and 94 for visual alignment
-        { key: "qf", title: "Quarter-finals", className: "column-qf", ids: ["97", "98", "99", "100"] },
+        { key: "qf", title: "Quarter-finals", className: "column-qf", ids: ["97", "99", "98", "100"] },
         { key: "sf", title: "Semi-finals", className: "column-sf", ids: ["101", "102"] },
         { key: "final", title: "Finals", className: "column-final", ids: ["104"] } // Draw only 104 in standard list for centered connection lines
     ];
@@ -55,8 +59,8 @@ export const renderKnockoutBracket = (container) => {
         const hasAway = aName && aName !== "undefined" && aName !== "null";
         const isUnresolved = !hasHome || !hasAway;
 
-        const homeDisplayName = hasHome ? hName : getBracketPlaceholderName(game.id, false);
-        const awayDisplayName = hasAway ? aName : getBracketPlaceholderName(game.id, true);
+        const homeDisplayName = hasHome ? hName : getBracketPlaceholderName(game, false);
+        const awayDisplayName = hasAway ? aName : getBracketPlaceholderName(game, true);
 
         let headerDate = "TBD";
         let headerStatus = "Upcoming";
