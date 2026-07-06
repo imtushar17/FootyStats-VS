@@ -19,6 +19,18 @@ export const drawWorldCupMatchesTab = (t1Name, t2Name) => {
 
     const games = state.worldCupGames || [];
 
+    if (state.dataFeedError) {
+        if (list1) list1.innerHTML = `<div class="wc-matches-empty">${escapeHTML(state.dataFeedError)}</div>`;
+        if (list2) list2.innerHTML = `<div class="wc-matches-empty">${escapeHTML(state.dataFeedError)}</div>`;
+        return;
+    }
+
+    if (games.length === 0) {
+        if (list1) list1.innerHTML = `<div class="wc-matches-empty">Loading Match Hub fixtures...</div>`;
+        if (list2) list2.innerHTML = `<div class="wc-matches-empty">Loading Match Hub fixtures...</div>`;
+        return;
+    }
+
     const filterMatches = (normName) => {
         return games.filter(g => {
             const h = normalizeTeamName(g.homeTeam?.name || g.home_team_name_en || "").toLowerCase();

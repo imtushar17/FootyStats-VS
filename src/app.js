@@ -5,6 +5,7 @@ import { drawTacticsPitch } from './components/tactics.js';
 import { drawWorldCupMatchesTab } from './components/worldCupTab.js';
 import { setupTrophyListeners } from './components/trophies.js';
 import { setupLiveArenaListeners, activateLiveArena, deactivateLiveArena } from './components/liveArena.js';
+import { fetchMatchesList } from './components/matchcentre/api.js';
 
 // Sliding Tabs Navigation System
 const initTabSlider = () => {
@@ -146,6 +147,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Fetch live FIFA rankings immediately on application load
     fetchLiveRankings();
+
+    // Fetch World Cup matches list immediately on application load
+    fetchMatchesList();
 });
 
 // Calculate tab slider position after custom web fonts are fully loaded

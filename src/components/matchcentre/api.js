@@ -57,6 +57,18 @@ export const fetchMatchesList = async () => {
             state.currentLiveMatches = mappedGames;
             state.worldCupGames = mappedGames;
             console.log(`Successfully fetched ${state.worldCupGames.length} matches from proxy.`);
+
+            // Trigger redrawing Match Hub tab if active
+            const activeTabBtn = document.querySelector('.tab-btn.active');
+            if (activeTabBtn && activeTabBtn.dataset.tab === 'wc2026') {
+                const t1 = document.getElementById('team1')?.value;
+                const t2 = document.getElementById('team2')?.value;
+                if (t1 && t2) {
+                    import('../worldCupTab.js').then(m => {
+                        m.drawWorldCupMatchesTab(t1, t2);
+                    }).catch(err => console.error("Failed to reload Match Hub tab:", err));
+                }
+            }
         } else {
             throw new Error("Invalid response format from matches proxy");
         }
