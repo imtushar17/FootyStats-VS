@@ -1,4 +1,4 @@
-const CACHE_NAME = 'footystats-v24';
+const CACHE_NAME = 'footystats-v25';
 const FLAGS_CACHE_NAME = 'footystats-flags';
 const FONTS_CACHE_NAME = 'footystats-fonts';
 const PORTRAITS_CACHE_NAME = 'footystats-portraits';
@@ -38,10 +38,23 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    Promise.all([
-      caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)),
-      self.skipWaiting()
-    ])
+    caches.open(CACHE_NAME).then(cache => {
+      const fetchAndCache = ASSETS.map(url => {
+        return fetch(new Request(url, { cache: 'reload' }))
+          .then(res => {
+            if (res.ok) return cache.put(url, res);
+            return fetch(url).then(backupRes => {
+              if (backupRes.ok) return cache.put(url, backupRes);
+            });
+          })
+          .catch(() => {
+            return fetch(url).then(backupRes => {
+              if (backupRes.ok) return cache.put(url, backupRes);
+            }).catch(err => console.error(`Failed to cache ${url}:`, err));
+          });
+      });
+      return Promise.all([...fetchAndCache, self.skipWaiting()]);
+    })
   );
 });
 

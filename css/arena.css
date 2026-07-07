@@ -2359,6 +2359,7 @@ body.dark-theme .popup-event-row {
     padding-left: 16px !important;
     padding-right: 16px !important;
     box-sizing: border-box !important;
+    touch-action: pan-y !important;
 }
 
 /* Ensure Live Arena wrapper doesn't overflow */
@@ -2367,6 +2368,7 @@ body.dark-theme .popup-event-row {
     max-width: 100% !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
+    touch-action: pan-y !important;
 }
 
 /* Prevent Arena Header collision and overflow */

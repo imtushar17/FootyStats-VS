@@ -65,6 +65,7 @@ html, body {
     background: var(--bg-primary);
     font-family: var(--font-body);
     color: var(--text-main);
+    touch-action: pan-y !important;
 }
 
 body {
@@ -130,6 +131,7 @@ body.dark-theme::after {
     overflow-y: auto;
     background: var(--bg-primary);
     transition: background 0.3s ease;
+    touch-action: pan-y !important;
 }
 
 body.dark-theme #phone-viewport {
