@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getWcTeamFlagHTML, getStadiumName, formatToIST, getTeamData, escapeHTML, isMatchFinished, isMatchLive, isMatchUpcoming, getGameScore } from './utils.js';
+import { getWcTeamFlagHTML, getStadiumName, formatToIST, getTeamData, normalizeTeamName, escapeHTML, isMatchFinished, isMatchLive, isMatchUpcoming, getGameScore } from './utils.js';
 import { closeExplorer, closeBracket, closeGroups } from './explorer.js';
 import { fetchMatchDetails, fetchMatchTimeline } from './api.js';
 
@@ -346,7 +346,25 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
         return "MID";
     };
 
-    const getPlayersList = (apiPlayers, isAwayTeam) => {
+    const getPlayerPicture = (playerName, teamName) => {
+        const teamObj = getTeamData(teamName);
+        if (!teamObj || !Array.isArray(teamObj.squad)) return "";
+        
+        const cleanSearchName = normalizeTeamName(playerName).toLowerCase();
+        const searchSurname = cleanSearchName.split(" ").pop();
+
+        let found = teamObj.squad.find(p => normalizeTeamName(p.name).toLowerCase() === cleanSearchName);
+        if (!found && searchSurname) {
+            found = teamObj.squad.find(p => normalizeTeamName(p.name).toLowerCase().includes(searchSurname));
+        }
+
+        if (found && found.sofascoreId) {
+            return `./assets/portraits/${found.sofascoreId}.png`;
+        }
+        return "";
+    };
+
+    const getPlayersList = (apiPlayers, teamName, isAwayTeam) => {
         let list = [];
         if (apiPlayers.length > 0) {
             list = apiPlayers.filter(p => p.Status === 1).map(p => {
@@ -356,11 +374,15 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
                 else if (posStr === "1") pos = "DEF";
                 else if (posStr === "2") pos = "MID";
                 else if (posStr === "3") pos = "FWD";
+                
+                const pName = p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.ShortClubName || "Player";
+                const localPic = getPlayerPicture(pName, teamName);
+
                 return {
-                    name: p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.ShortClubName || "Player",
+                    name: pName,
                     shirt: String(p.ShirtNumber || ""),
                     pos: pos,
-                    picture: p.PictureUrl || ""
+                    picture: localPic || p.PictureUrl || ""
                 };
             });
         } else {
@@ -370,14 +392,14 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
                     name: p.name || "Player",
                     shirt: String(p.shirt || ""),
                     pos: getPositionCategory(p.position),
-                    picture: p.picture || ""
+                    picture: p.picture || getPlayerPicture(p.name || "", teamName) || ""
                 }));
             }
         }
         return list;
     };
 
-    const getBenchList = (apiPlayers, isAwayTeam) => {
+    const getBenchList = (apiPlayers, teamName, isAwayTeam) => {
         let list = [];
         if (apiPlayers.length > 0) {
             list = apiPlayers.filter(p => p.Status === 2).map(p => {
@@ -387,11 +409,15 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
                 else if (posStr === "1") pos = "DEF";
                 else if (posStr === "2") pos = "MID";
                 else if (posStr === "3") pos = "FWD";
+                
+                const pName = p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.ShortClubName || "Player";
+                const localPic = getPlayerPicture(pName, teamName);
+
                 return {
-                    name: p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.ShortClubName || "Player",
+                    name: pName,
                     shirt: String(p.ShirtNumber || ""),
                     pos: pos,
-                    picture: p.PictureUrl || ""
+                    picture: localPic || p.PictureUrl || ""
                 };
             });
         } else {
@@ -401,17 +427,17 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
                     name: p.name || "Player",
                     shirt: String(p.shirt || ""),
                     pos: getPositionCategory(p.position),
-                    picture: p.picture || ""
+                    picture: p.picture || getPlayerPicture(p.name || "", teamName) || ""
                 }));
             }
         }
         return list;
     };
 
-    const homeStarters = getPlayersList(homeApiPlayers, false);
-    const awayStarters = getPlayersList(awayApiPlayers, true);
-    const homeSubs = getBenchList(homeApiPlayers, false);
-    const awaySubs = getBenchList(awayApiPlayers, true);
+    const homeStarters = getPlayersList(homeApiPlayers, hName, false);
+    const awayStarters = getPlayersList(awayApiPlayers, aName, true);
+    const homeSubs = getBenchList(homeApiPlayers, hName, false);
+    const awaySubs = getBenchList(awayApiPlayers, aName, true);
 
     const getLeftPercentage = (count, idx) => {
         if (count === 1) return 50;
