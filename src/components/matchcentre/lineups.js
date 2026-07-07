@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { getStartingXI } from '../../data/lineups.js';
-import { getWcTeamFlagHTML, getTeamData, escapeHTML } from './utils.js';
+import { getWcTeamFlagHTML, getTeamData, escapeHTML, isMatchUpcoming, normalizeTeamName } from './utils.js';
 
 export const drawLineupPitch = (game, selectedTeamName) => {
     const flagsContainer = document.getElementById("lineups-team-flags");
@@ -35,8 +35,38 @@ export const drawLineupPitch = (game, selectedTeamName) => {
     const subEl = document.getElementById("lineups-active-team-sub");
     const jerseysContainer = document.getElementById("lineups-jerseys-container");
     const benchContainer = document.getElementById("lineups-bench-container");
+    const pitchEl = document.getElementById("lineups-pitch");
 
+    const isUpcoming = isMatchUpcoming(game);
     const details = state.currentSelectedMatchDetails;
+    const isMatchingDetails = details && String(details.IdMatch) === String(game.fifaMatchId || game.id);
+
+    if (isUpcoming || !isMatchingDetails) {
+        if (titleEl) titleEl.textContent = "Lineups Not Announced";
+        if (subEl) subEl.textContent = "Teams list will update near Kick-Off";
+        
+        if (pitchEl) {
+            const existingAnnouncement = pitchEl.querySelector(".popup-lineups-announcement");
+            if (!existingAnnouncement) {
+                if (jerseysContainer) jerseysContainer.innerHTML = "";
+                const announcement = document.createElement("div");
+                announcement.className = "popup-lineups-announcement";
+                announcement.style.cssText = "position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10,15,29,0.9); z-index: 100; font-family: var(--font-heading); color: #ffffff; font-size: 14px; font-weight: 700; padding: 20px; text-align: center; border-radius: 20px;";
+                announcement.innerHTML = "📢 Lineups will be available on Kick-Off";
+                pitchEl.appendChild(announcement);
+            }
+        }
+        if (benchContainer) {
+            benchContainer.innerHTML = "";
+            benchContainer.style.borderTop = "none";
+        }
+        return;
+    } else {
+        const existingAnnouncement = pitchEl?.querySelector(".popup-lineups-announcement");
+        if (existingAnnouncement) existingAnnouncement.remove();
+        if (benchContainer) benchContainer.style.borderTop = "1px solid var(--border-color)";
+    }
+
     const activeDetailTeam = isAwaySelected ? details?.AwayTeam : details?.HomeTeam;
     const apiPlayers = activeDetailTeam?.Players || [];
 

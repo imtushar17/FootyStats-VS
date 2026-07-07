@@ -294,6 +294,10 @@ export const selectLiveMatch = async (game) => {
         else b.classList.remove("active");
     });
     
+    // Reset selected match details to prevent flash of old match data (e.g. Portugal/Spain)
+    state.currentSelectedMatchDetails = null;
+    updateConsoleDetails(game);
+    
     await fetchMatchDetails(game.id);
     updateConsoleDetails(game);
 };
