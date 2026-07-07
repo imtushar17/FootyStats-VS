@@ -124,15 +124,9 @@ body.dark-theme .compare-btn {
     gap: 8px;
     justify-content: flex-end;
     padding: 14px 16px 8px 16px;
-    background: var(--bg-primary);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+    background: transparent;
 }
 
-body.dark-theme .header-controls {
-    background: var(--bg-secondary);
-}
 
 /* Common variables utilities */
 .hidden {

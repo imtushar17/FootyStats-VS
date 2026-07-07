@@ -1198,9 +1198,6 @@ body.dark-theme .lineup-flag-btn.active {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 4px;
     background: var(--card-bg);
-    position: sticky;
-    top: -2px;
-    z-index: 10;
 }
 
 body.dark-theme .calendar-date-header {
@@ -1555,9 +1552,6 @@ body.dark-theme .bracket-column:not(:last-child) .bracket-match-node.even-node::
 }
 
 .match-detail-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
     height: 56px;
     background: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
