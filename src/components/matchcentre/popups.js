@@ -330,11 +330,23 @@ const renderPopupLineupPitch = (container, teamName, isAway) => {
 const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents) => {
     if (!pitchContainer) return;
 
-    const homeTeamObj = state.currentSelectedMatchDetails?.HomeTeam;
-    const awayTeamObj = state.currentSelectedMatchDetails?.AwayTeam;
+    const matchObj = state.currentSelectedMatchDetails || {};
+    const isUpcoming = isMatchUpcoming(matchObj);
+
+    const homeTeamObj = matchObj.HomeTeam;
+    const awayTeamObj = matchObj.AwayTeam;
 
     const homeApiPlayers = homeTeamObj?.Players || [];
     const awayApiPlayers = awayTeamObj?.Players || [];
+
+    if (isUpcoming || (homeApiPlayers.length === 0 && awayApiPlayers.length === 0)) {
+        pitchContainer.innerHTML = `
+            <div class="popup-lineups-announcement" style="text-align: center; padding: 40px 20px; font-family: var(--font-heading); color: var(--text-muted); font-size: 14px; font-weight: 700; border: 1.5px dashed var(--border-color); border-radius: 12px; margin: 20px 0;">
+                📢 Lineups will be available on Kick-Off
+            </div>
+        `;
+        return;
+    }
 
     const getPositionCategory = (posStr) => {
         if (!posStr) return "MID";

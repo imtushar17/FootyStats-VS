@@ -1,4 +1,4 @@
-const CACHE_NAME = 'footystats-v23';
+const CACHE_NAME = 'footystats-v24';
 const FLAGS_CACHE_NAME = 'footystats-flags';
 const FONTS_CACHE_NAME = 'footystats-fonts';
 const PORTRAITS_CACHE_NAME = 'footystats-portraits';
