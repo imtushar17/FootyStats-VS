@@ -331,10 +331,15 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
     if (!pitchContainer) return;
 
     const matchObj = state.currentSelectedMatchDetails || {};
-    const isUpcoming = isMatchUpcoming(matchObj);
+    const isMatchingDetails = matchObj && matchObj.HomeTeam && 
+        (normalizeTeamName(matchObj.HomeTeam.TeamName?.[0]?.Description) === normalizeTeamName(hName) ||
+         normalizeTeamName(matchObj.AwayTeam?.TeamName?.[0]?.Description) === normalizeTeamName(aName));
 
-    const homeTeamObj = matchObj.HomeTeam;
-    const awayTeamObj = matchObj.AwayTeam;
+    const useDetails = isMatchingDetails ? matchObj : {};
+    const isUpcoming = !isMatchingDetails || isMatchUpcoming(useDetails);
+
+    const homeTeamObj = useDetails.HomeTeam;
+    const awayTeamObj = useDetails.AwayTeam;
 
     const homeApiPlayers = homeTeamObj?.Players || [];
     const awayApiPlayers = awayTeamObj?.Players || [];
@@ -733,6 +738,7 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
 };
 
 export const openMatchDetailPopup = async (game) => {
+    state.currentSelectedMatchDetails = null; // Clear stale details state immediately to prevent visual leaks
     const popup = document.getElementById("match-detail-overlay");
     const body = document.getElementById("match-detail-popup-body");
     if (!popup || !body) return;
