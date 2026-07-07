@@ -357,7 +357,7 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
                 else if (posStr === "2") pos = "MID";
                 else if (posStr === "3") pos = "FWD";
                 return {
-                    name: p.Name?.[0]?.Description || p.ShortClubName || "Player",
+                    name: p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.ShortClubName || "Player",
                     shirt: String(p.ShirtNumber || ""),
                     pos: pos,
                     picture: p.PictureUrl || ""
@@ -388,7 +388,7 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
                 else if (posStr === "2") pos = "MID";
                 else if (posStr === "3") pos = "FWD";
                 return {
-                    name: p.Name?.[0]?.Description || p.ShortClubName || "Player",
+                    name: p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.ShortClubName || "Player",
                     shirt: String(p.ShirtNumber || ""),
                     pos: pos,
                     picture: p.PictureUrl || ""
