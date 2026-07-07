@@ -327,7 +327,7 @@ export const drawDayMatchesView = (container, day, month) => {
             </button>
             <span class="day-matches-title">Matches on ${displayDateStr}</span>
         </div>
-        <div class="day-matches-list" style="display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 40vh; padding-right: 4px;">
+        <div class="day-matches-list" style="display: flex; flex-direction: column; gap: 12px; padding-right: 4px;">
         </div>
     `;
 

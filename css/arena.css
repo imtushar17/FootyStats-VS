@@ -164,6 +164,10 @@ body.world-cup-active .live-arena-wrapper {
     flex-direction: column;
 }
 
+body.world-cup-active .header-controls {
+    display: none !important;
+}
+
 body.world-cup-active .container {
     display: none !important;
 }
