@@ -589,12 +589,25 @@
 
     <script type="module" src="src/app.js"></script>
     <script>
-        // Register Service Worker for PWA
+        // Register Service Worker for PWA with auto-update checks and immediate reload
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+                    .then(reg => {
+                        console.log('Service Worker registered successfully:', reg.scope);
+                        // Force an update check on startup to pull the latest cache immediately
+                        reg.update();
+                    })
                     .catch(err => console.log('Service Worker registration failed:', err));
+            });
+
+            // Auto-reload the page when the service worker changes to serve new assets immediately
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
             });
         }
     </script>
