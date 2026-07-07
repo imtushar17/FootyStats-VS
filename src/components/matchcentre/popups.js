@@ -376,13 +376,14 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
                 else if (posStr === "3") pos = "FWD";
                 
                 const pName = p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.ShortClubName || "Player";
+                const apiPic = p.PlayerPicture?.PictureUrl;
                 const localPic = getPlayerPicture(pName, teamName);
 
                 return {
                     name: pName,
                     shirt: String(p.ShirtNumber || ""),
                     pos: pos,
-                    picture: localPic || p.PictureUrl || ""
+                    picture: apiPic || localPic || ""
                 };
             });
         } else {
@@ -411,13 +412,14 @@ const renderPopupVerticalLineups = (pitchContainer, hName, aName, timelineEvents
                 else if (posStr === "3") pos = "FWD";
                 
                 const pName = p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || p.ShortClubName || "Player";
+                const apiPic = p.PlayerPicture?.PictureUrl;
                 const localPic = getPlayerPicture(pName, teamName);
 
                 return {
                     name: pName,
                     shirt: String(p.ShirtNumber || ""),
                     pos: pos,
-                    picture: localPic || p.PictureUrl || ""
+                    picture: apiPic || localPic || ""
                 };
             });
         } else {
