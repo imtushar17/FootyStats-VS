@@ -597,6 +597,20 @@
                         console.log('Service Worker registered successfully:', reg.scope);
                         // Force an update check on startup to pull the latest cache immediately
                         reg.update();
+
+                        // Check for updates every 5 minutes in the background while the app is in use
+                        setInterval(() => {
+                            console.log('Checking for service worker updates in background...');
+                            reg.update();
+                        }, 1000 * 60 * 5);
+
+                        // Check for updates immediately when the user returns to/opens the tab
+                        document.addEventListener('visibilitychange', () => {
+                            if (document.visibilityState === 'visible') {
+                                console.log('App became visible, checking for updates...');
+                                reg.update();
+                            }
+                        });
                     })
                     .catch(err => console.log('Service Worker registration failed:', err));
             });
