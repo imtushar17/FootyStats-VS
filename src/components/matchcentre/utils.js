@@ -369,6 +369,9 @@ export const escapeHTML = (str) => {
 
 export const isMatchFinished = (game) => {
     if (!game) return false;
+    if (game.IdMatch !== undefined) {
+        return game.Period === 10 || game.MatchStatus === 0;
+    }
     const details = state.currentSelectedMatchDetails;
     if (details && String(details.IdMatch) === String(game.fifaMatchId || game.id)) {
         if (details.Period === 10 || details.MatchStatus === 0) return true;
@@ -378,6 +381,11 @@ export const isMatchFinished = (game) => {
 
 export const isMatchLive = (game) => {
     if (!game) return false;
+    if (game.IdMatch !== undefined) {
+        if (game.Period > 0 && game.Period !== 10) return true;
+        if (game.MatchStatus === 3 || game.MatchStatus === 6) return true;
+        return false;
+    }
     const details = state.currentSelectedMatchDetails;
     if (details && String(details.IdMatch) === String(game.fifaMatchId || game.id)) {
         if (details.Period > 0 && details.Period !== 10) return true;

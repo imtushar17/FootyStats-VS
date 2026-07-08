@@ -519,7 +519,7 @@ export const updateConsoleDetails = (game) => {
 
         if (timelineEvents.length > 0) {
             timelineEvents.forEach(evt => {
-                let icon = "❓";
+                let icon = '<span class="material-symbols-outlined" style="font-size: 16px; color: #2854C5; vertical-align: middle;">headset_mic</span>';
                 const typeCode = evt.Type;
                 if (typeCode === 0) icon = "⚽";
                 else if (typeCode === 2) icon = "🟨";

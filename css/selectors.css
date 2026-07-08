@@ -236,12 +236,14 @@
 }
 
 .filter-tab {
+    font-family: var(--font-heading);
     padding: 8px 14px;
     border: 1px solid var(--border-color);
     background: var(--bg-secondary);
     border-radius: 8px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
+    letter-spacing: 0.2px;
     color: var(--text-main);
     cursor: pointer;
     white-space: nowrap;
