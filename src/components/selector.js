@@ -157,10 +157,13 @@ export const populateModalGrid = () => {
                 card.classList.add('selected-elsewhere');
             }
 
+            const isLongName = key.length > 12;
+            const nameStyle = isLongName ? ' style="font-size: 11.5px;"' : '';
+
             card.innerHTML = `
                 <span class="modal-card-flag">${getFlagHTML(key, "modal-flag-img")}</span>
                 <div class="modal-card-info">
-                    <span class="modal-card-name">${key}</span>
+                    <span class="modal-card-name"${nameStyle}>${key}</span>
                     <span class="modal-card-ranking">#${team.fifaRanking}</span>
                 </div>
             `;
@@ -194,7 +197,7 @@ export const selectTeam = (key) => {
     if (triggerBtn) {
         const color = TEAM_COLORS[key.toLowerCase()] || 'var(--border-color)';
         triggerBtn.style.borderColor = color;
-        triggerBtn.style.borderWidth = '2px';
+        triggerBtn.style.borderWidth = '1.5px';
         triggerBtn.style.boxShadow = `0 4px 14px ${hexToRgba(color, 0.15)}`;
     }
 

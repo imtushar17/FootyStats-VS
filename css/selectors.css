@@ -204,19 +204,20 @@
 #modal-search {
     width: 100%;
     padding: 14px 44px 14px 16px;
-    border: 1px solid var(--border-color);
+    border: 1.5px solid var(--border-color);
     border-radius: 12px;
     font-size: 14px;
     outline: none;
     background: var(--bg-primary);
     color: var(--text-main);
     transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 #modal-search:focus {
     background: var(--card-bg);
     border-color: var(--text-main);
-    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.1);
 }
 
 .modal-filter-tabs {
@@ -271,7 +272,7 @@
 .modal-team-card {
     padding: 12px;
     background: var(--bg-primary);
-    border: 2px solid var(--border-color);
+    border: 1.5px solid var(--border-color);
     border-radius: 14px;
     display: flex;
     align-items: center;
@@ -308,10 +309,12 @@
 }
 
 .modal-card-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-main);
-    text-transform: uppercase;
+    line-height: 1.2;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 
 .modal-card-ranking {
