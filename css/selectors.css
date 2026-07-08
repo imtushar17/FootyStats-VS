@@ -135,7 +135,7 @@
 
 .modal-box {
     width: 100%;
-    max-width: 375px;
+    max-width: 410px;
     margin: 16px;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -144,7 +144,7 @@
     padding: 24px;
     display: flex;
     flex-direction: column;
-    max-height: 85vh;
+    max-height: 90vh;
     transform: translateY(20px);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -194,7 +194,7 @@
 
 .search-icon {
     position: absolute;
-    left: 18px;
+    right: 18px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-light);
@@ -203,7 +203,7 @@
 
 #modal-search {
     width: 100%;
-    padding: 14px 14px 14px 44px;
+    padding: 14px 44px 14px 16px;
     border: 1px solid var(--border-color);
     border-radius: 12px;
     font-size: 14px;
@@ -261,29 +261,29 @@
 
 .modal-team-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
     overflow-y: auto;
     padding-right: 4px;
-    max-height: 40vh;
+    max-height: 55vh;
 }
 
 .modal-team-card {
     padding: 12px;
     background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
     display: flex;
     align-items: center;
     gap: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal-team-card:hover {
     background: var(--card-bg);
-    border-color: var(--text-main);
-    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 .modal-team-card.selected-elsewhere {
@@ -311,6 +311,7 @@
     font-size: 14px;
     font-weight: 700;
     color: var(--text-main);
+    text-transform: uppercase;
 }
 
 .modal-card-ranking {

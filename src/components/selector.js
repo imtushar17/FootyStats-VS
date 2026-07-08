@@ -1,8 +1,73 @@
 import { teamData } from '../data/teams.js';
 
+const TEAM_COLORS = {
+    // CONCACAF
+    'usa': '#002868',
+    'mexico': '#006847',
+    'canada': '#D52B1E',
+    'costa rica': '#CE1126',
+    'panama': '#C8102E',
+    'jamaica': '#FEE100',
+    // CONMEBOL
+    'argentina': '#43A1D5',
+    'brazil': '#FFDC02',
+    'uruguay': '#55B5E5',
+    'colombia': '#FCD116',
+    'ecuador': '#FFD100',
+    'peru': '#D91023',
+    'chile': '#B0272D',
+    // UEFA
+    'france': '#002395',
+    'england': '#CE1124',
+    'spain': '#C60B1E',
+    'germany': '#000000',
+    'portugal': '#E42518',
+    'netherlands': '#F36C21',
+    'italy': '#0064A8',
+    'belgium': '#8C0C24',
+    'croatia': '#ED1C24',
+    'switzerland': '#8B1A1A',
+    'denmark': '#C60C30',
+    'serbia': '#C6363C',
+    'poland': '#DC143C',
+    'scotland': '#004B84',
+    'austria': '#ED2939',
+    'hungary': '#436F4D',
+    'turkey': '#E30A17',
+    'ukraine': '#FFD700',
+    // CAF
+    'morocco': '#C1272D',
+    'senegal': '#00853F',
+    'egypt': '#A3121A',
+    'algeria': '#006233',
+    'nigeria': '#008751',
+    'cameroon': '#479A50',
+    'ghana': '#006B3F',
+    'ivory coast': '#F77F00',
+    'mali': '#14B53A',
+    // AFC
+    'japan': '#0F3F8C',
+    'south korea': '#C21E2B',
+    'iran': '#239F40',
+    'saudi arabia': '#006C35',
+    'australia': '#FFCD00',
+    'qatar': '#8A1538',
+    // OFC
+    'new zealand': '#1A1A1A'
+};
+
+const hexToRgba = (hex, alpha) => {
+    if (!hex || hex.indexOf('#') !== 0) return `rgba(0,0,0,${alpha})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 let activeSlot = 1;
 let currentFilter = "All";
 let currentSearch = "";
+let placeholderInterval = null;
 
 export const getFlagHTML = (teamOrKey, className = "") => {
     let team = typeof teamOrKey === 'string' ? teamData[teamOrKey] : teamOrKey;
@@ -34,13 +99,32 @@ export const openModal = (slot) => {
     if (modalOverlay) {
         modalOverlay.classList.add('open');
         populateModalGrid();
-        if (modalSearch) modalSearch.focus();
+        if (modalSearch) {
+            modalSearch.focus();
+            
+            // Set up search placeholder dynamic loop
+            if (placeholderInterval) clearInterval(placeholderInterval);
+            const placeholderTeams = ["Argentina", "France", "Brazil", "Germany", "Spain", "England", "USA", "Mexico", "Portugal", "Canada", "Japan", "Italy"];
+            let idx = 0;
+            modalSearch.placeholder = `e.g. ${placeholderTeams[0]}`;
+            placeholderInterval = setInterval(() => {
+                const input = document.getElementById('modal-search');
+                if (input) {
+                    idx = (idx + 1) % placeholderTeams.length;
+                    input.placeholder = `e.g. ${placeholderTeams[idx]}`;
+                }
+            }, 2500);
+        }
     }
 };
 
 export const closeModal = () => {
     const modalOverlay = document.getElementById('team-selector-modal');
     if (modalOverlay) modalOverlay.classList.remove('open');
+    if (placeholderInterval) {
+        clearInterval(placeholderInterval);
+        placeholderInterval = null;
+    }
 };
 
 export const populateModalGrid = () => {
@@ -62,6 +146,9 @@ export const populateModalGrid = () => {
         if (matchesRegion && matchesSearch) {
             const card = document.createElement('div');
             card.className = "modal-team-card";
+            
+            const color = TEAM_COLORS[key.toLowerCase()] || '#E0E0E0';
+            card.style.borderColor = color;
 
             const oppositeVal = (activeSlot === 1) ? (team2Input?.value || "") : (team1Input?.value || "");
             const isSelectedElsewhere = oppositeVal === key;
@@ -74,7 +161,7 @@ export const populateModalGrid = () => {
                 <span class="modal-card-flag">${getFlagHTML(key, "modal-flag-img")}</span>
                 <div class="modal-card-info">
                     <span class="modal-card-name">${key}</span>
-                    <span class="modal-card-ranking">Ranking: #${team.fifaRanking}</span>
+                    <span class="modal-card-ranking">#${team.fifaRanking}</span>
                 </div>
             `;
 
@@ -102,6 +189,14 @@ export const selectTeam = (key) => {
     if (hiddenInput) hiddenInput.value = key;
     if (triggerFlag) triggerFlag.innerHTML = getFlagHTML(key, "trigger-flag-img");
     if (triggerName) triggerName.textContent = key;
+
+    const triggerBtn = document.getElementById(`team${activeSlot}-trigger`);
+    if (triggerBtn) {
+        const color = TEAM_COLORS[key.toLowerCase()] || 'var(--border-color)';
+        triggerBtn.style.borderColor = color;
+        triggerBtn.style.borderWidth = '2px';
+        triggerBtn.style.boxShadow = `0 4px 14px ${hexToRgba(color, 0.15)}`;
+    }
 
     closeModal();
 
