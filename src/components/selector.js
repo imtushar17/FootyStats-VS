@@ -8,6 +8,8 @@ const TEAM_COLORS = {
     'costa rica': '#CE1126',
     'panama': '#C8102E',
     'jamaica': '#FEE100',
+    'curaçao': '#002B7F',
+    'haiti': '#D21034',
     // CONMEBOL
     'argentina': '#43A1D5',
     'brazil': '#FFDC02',
@@ -16,6 +18,7 @@ const TEAM_COLORS = {
     'ecuador': '#FFD100',
     'peru': '#D91023',
     'chile': '#B0272D',
+    'paraguay': '#D52B1E',
     // UEFA
     'france': '#002395',
     'england': '#CE1124',
@@ -35,6 +38,11 @@ const TEAM_COLORS = {
     'hungary': '#436F4D',
     'turkey': '#E30A17',
     'ukraine': '#FFD700',
+    'norway': '#00205B',
+    'sweden': '#FECC02',
+    'bosnia and herzegovina': '#002F6C',
+    'bosnia and herzegovnia': '#002F6C',
+    'czechia': '#11457E',
     // CAF
     'morocco': '#C1272D',
     'senegal': '#00853F',
@@ -45,6 +53,10 @@ const TEAM_COLORS = {
     'ghana': '#006B3F',
     'ivory coast': '#F77F00',
     'mali': '#14B53A',
+    'cape verde': '#002F6C',
+    'dr congo': '#007FFF',
+    'south africa': '#007A3D',
+    'tunisia': '#E41B13',
     // AFC
     'japan': '#0F3F8C',
     'south korea': '#C21E2B',
@@ -52,6 +64,9 @@ const TEAM_COLORS = {
     'saudi arabia': '#006C35',
     'australia': '#FFCD00',
     'qatar': '#8A1538',
+    'iraq': '#007A3D',
+    'jordan': '#C8102E',
+    'uzbekistan': '#0099B5',
     // OFC
     'new zealand': '#1A1A1A'
 };
