@@ -155,7 +155,7 @@ body:not(.dark-theme) #unlock-live-btn {
     width: 100%;
     min-height: 100%;
     background: var(--bg-primary);
-    padding: 16px;
+    padding: 16px 16px 40px 16px;
     animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -1597,7 +1597,7 @@ body.dark-theme .bracket-column:not(:last-child) .bracket-match-node.even-node::
     flex: 1;
     overflow-y: auto;
     scroll-snap-type: y mandatory;
-    padding: 16px;
+    padding: 16px 16px 40px 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -2358,10 +2358,11 @@ body.dark-theme .popup-event-row {
     overflow-x: hidden !important;
 }
 
-/* Add side padding to comparison container to bound the H2H dashboard */
+/* Add side and bottom padding to comparison container to bound the H2H dashboard */
 .container {
     padding-left: 16px !important;
     padding-right: 16px !important;
+    padding-bottom: 40px !important;
     box-sizing: border-box !important;
     touch-action: pan-y !important;
 }
