@@ -125,46 +125,32 @@
             <div class="tab-content">
                 <!-- Overview Tab Panel -->
                 <div class="tab-panel active" id="panel-overview">
-                    <div class="comparison-wrapper">
-                        <!-- Team 1 Card -->
-                        <div class="team-card" id="team1-card">
-                            <div class="team-header">
-                                <div class="team-header-main">
-                                    <span class="flag-icon" id="team1-flag">🇦🇷</span>
-                                    <h3 id="team1-name">Argentina</h3>
-                                </div>
-                                <span class="confederation-badge" id="team1-confed">CONMEBOL</span>
-                            </div>
-                            <div class="stats" id="team1-stats">
-                                <!-- Stats rendered via JS -->
-                            </div>
+                    <!-- Side-by-Side Team Hero Header -->
+                    <div class="overview-hero-card">
+                        <div class="overview-hero-team team1-side">
+                            <span class="overview-hero-flag" id="overview-t1-flag">🇦🇷</span>
+                            <span class="overview-hero-name" id="overview-t1-name">Argentina</span>
+                            <span class="overview-hero-confed" id="overview-t1-confed">CONMEBOL</span>
                         </div>
-
-                        <!-- Central VS Badge -->
-                        <div class="vs-badge-container">
-                            <div class="vs-badge-circle">VS</div>
-                        </div>
-
-                        <!-- Team 2 Card -->
-                        <div class="team-card" id="team2-card">
-                            <div class="team-header">
-                                <div class="team-header-main">
-                                    <span class="flag-icon" id="team2-flag">🇫🇷</span>
-                                    <h3 id="team2-name">France</h3>
-                                </div>
-                                <span class="confederation-badge" id="team2-confed">UEFA</span>
-                            </div>
-                            <div class="stats" id="team2-stats">
-                                <!-- Stats rendered via JS -->
-                            </div>
+                        <div class="overview-hero-team team2-side">
+                            <span class="overview-hero-flag" id="overview-t2-flag">🇫🇷</span>
+                            <span class="overview-hero-name" id="overview-t2-name">France</span>
+                            <span class="overview-hero-confed" id="overview-t2-confed">UEFA</span>
                         </div>
                     </div>
 
-                    <!-- Dynamic Comparative Meter / Analytics -->
-                    <div class="visual-comparison-container" style="width: 100%;">
-                        <h3>Visual Metric Distribution</h3>
-                        <div id="visual-bars" class="visual-bars-grid">
-                            <!-- Progress bar comparison charts rendered via JS -->
+                    <!-- Consolidated Metrics Card -->
+                    <div class="comparison-metrics-card">
+                        <div class="metrics-list" id="overview-metrics-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Key Personnel Scrolling Container -->
+                    <div class="squad-profiles-card">
+                        <h3 class="squad-profiles-title">Squad Profiles</h3>
+                        <div class="squad-profiles-list" id="overview-squad-profiles-list">
+                            <!-- Populated dynamically via JS -->
                         </div>
                     </div>
                 </div>

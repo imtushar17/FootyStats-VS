@@ -161,17 +161,6 @@ export const setupComparisonForm = () => {
 
         const team1Input = document.getElementById('team1');
         const team2Input = document.getElementById('team2');
-        const team1Card = document.getElementById('team1-card');
-        const team2Card = document.getElementById('team2-card');
-        const team1Name = document.getElementById('team1-name');
-        const team2Name = document.getElementById('team2-name');
-        const team1Flag = document.getElementById('team1-flag');
-        const team2Flag = document.getElementById('team2-flag');
-        const team1Confed = document.getElementById('team1-confed');
-        const team2Confed = document.getElementById('team2-confed');
-        const team1Stats = document.getElementById('team1-stats');
-        const team2Stats = document.getElementById('team2-stats');
-        const visualBars = document.getElementById('visual-bars');
         const comparisonResult = document.getElementById('comparison-result');
 
         const team1Key = team1Input?.value;
@@ -206,91 +195,44 @@ export const setupComparisonForm = () => {
         const t1PointsWin = t1.rankingPoints > t2.rankingPoints;
         const t2PointsWin = t2.rankingPoints > t1.rankingPoints;
 
-        let t1Score = 0;
-        let t2Score = 0;
-        if (t1RankWin) t1Score++; else if (t2RankWin) t2Score++;
-        if (t1WcWin) t1Score++; else if (t2WcWin) t2Score++;
-        if (t1ConfedWin) t1Score++; else if (t2ConfedWin) t2Score++;
-        if (t1PointsWin) t1Score++; else if (t2PointsWin) t2Score++;
+        // Populate team stats overview hero cards
+        const oT1Flag = document.getElementById('overview-t1-flag');
+        const oT1Name = document.getElementById('overview-t1-name');
+        const oT1Confed = document.getElementById('overview-t1-confed');
+        const oT2Flag = document.getElementById('overview-t2-flag');
+        const oT2Name = document.getElementById('overview-t2-name');
+        const oT2Confed = document.getElementById('overview-t2-confed');
 
-        if (team1Card) team1Card.classList.remove('better-team');
-        if (team2Card) team2Card.classList.remove('better-team');
+        if (oT1Flag) oT1Flag.innerHTML = getFlagHTML(team1Key, "overview-hero-flag-img");
+        if (oT1Name) oT1Name.textContent = team1Key;
+        if (oT1Confed) oT1Confed.textContent = t1.confederation;
+        if (oT2Flag) oT2Flag.innerHTML = getFlagHTML(team2Key, "overview-hero-flag-img");
+        if (oT2Name) oT2Name.textContent = team2Key;
+        if (oT2Confed) oT2Confed.textContent = t2.confederation;
 
-        if (t1Score > t2Score) {
-            if (team1Card) team1Card.classList.add('better-team');
-        } else if (t2Score > t1Score) {
-            if (team2Card) team2Card.classList.add('better-team');
-        }
-
-        // Populate team stats overview cards
-        if (team1Name) team1Name.textContent = team1Key;
-        if (team1Flag) team1Flag.innerHTML = getFlagHTML(team1Key, "dashboard-flag-img");
-        if (team1Confed) team1Confed.textContent = t1.confederation;
-        if (team1Stats) {
-            team1Stats.innerHTML = `
-                <div class="stat-item ${t1RankWin ? 'highlight-win' : ''}">
-                    <span class="stat-label">🌐 FIFA Ranking</span>
-                    <span class="stat-value" id="t1-val-rank">#${t1.fifaRanking}</span>
+        // Populate side-by-side metrics grid
+        const metricsList = document.getElementById('overview-metrics-list');
+        if (metricsList) {
+            metricsList.innerHTML = `
+                <div class="metric-row">
+                    <div class="metric-val team1-side ${t1RankWin ? 'better' : ''}" id="t1-val-rank">#${t1.fifaRanking}</div>
+                    <div class="metric-label">FIFA Ranking</div>
+                    <div class="metric-val team2-side ${t2RankWin ? 'better' : ''}" id="t2-val-rank">#${t2.fifaRanking}</div>
                 </div>
-                <div class="stat-item ${t1WcWin ? 'highlight-win' : ''}">
-                    <span class="stat-label">🏆 World Cups Won</span>
-                    <span class="stat-value" id="t1-val-wc">${t1.worldCups}</span>
+                <div class="metric-row">
+                    <div class="metric-val team1-side ${t1WcWin ? 'better' : ''}" id="t1-val-wc">${t1.worldCups}</div>
+                    <div class="metric-label">World Cups Won</div>
+                    <div class="metric-val team2-side ${t2WcWin ? 'better' : ''}" id="t2-val-wc">${t2.worldCups}</div>
                 </div>
-                <div class="stat-item ${t1ConfedWin ? 'highlight-win' : ''}">
-                    <span class="stat-label">🥇 Confederation Titles</span>
-                    <span class="stat-value" id="t1-val-confed">${t1.confederationTitles}</span>
+                <div class="metric-row">
+                    <div class="metric-val team1-side ${t1ConfedWin ? 'better' : ''}" id="t1-val-confed">${t1.confederationTitles}</div>
+                    <div class="metric-label">Confederation Titles</div>
+                    <div class="metric-val team2-side ${t2ConfedWin ? 'better' : ''}" id="t2-val-confed">${t2.confederationTitles}</div>
                 </div>
-                <div class="stat-item ${t1PointsWin ? 'highlight-win' : ''}">
-                    <span class="stat-label">📊 FIFA Points</span>
-                    <span class="stat-value" id="t1-val-points">${t1.rankingPoints.toLocaleString()}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">⭐ Star Player</span>
-                    <span class="stat-value">${t1.starPlayer}</span>
-                </div>
-                <div class="stat-item scorer-stat-item">
-                    <span class="stat-label">⚽ Top Scorer</span>
-                    <span class="stat-value scorer-stat-value">${t1.topScorer}${t1.topScorerActive ? ' <span class="live-badge"><span class="live-dot"></span>Active</span>' : ''}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">🧑‍💼 Current Coach</span>
-                    <span class="stat-value">${t1.coach}</span>
-                </div>
-            `;
-        }
-
-        if (team2Name) team2Name.textContent = team2Key;
-        if (team2Flag) team2Flag.innerHTML = getFlagHTML(team2Key, "dashboard-flag-img");
-        if (team2Confed) team2Confed.textContent = t2.confederation;
-        if (team2Stats) {
-            team2Stats.innerHTML = `
-                <div class="stat-item ${t2RankWin ? 'highlight-win' : ''}">
-                    <span class="stat-label">🌐 FIFA Ranking</span>
-                    <span class="stat-value" id="t2-val-rank">#${t2.fifaRanking}</span>
-                </div>
-                <div class="stat-item ${t2WcWin ? 'highlight-win' : ''}">
-                    <span class="stat-label">🏆 World Cups Won</span>
-                    <span class="stat-value" id="t2-val-wc">${t2.worldCups}</span>
-                </div>
-                <div class="stat-item ${t2ConfedWin ? 'highlight-win' : ''}">
-                    <span class="stat-label">🥇 Confederation Titles</span>
-                    <span class="stat-value" id="t2-val-confed">${t2.confederationTitles}</span>
-                </div>
-                <div class="stat-item ${t2PointsWin ? 'highlight-win' : ''}">
-                    <span class="stat-label">📊 FIFA Points</span>
-                    <span class="stat-value" id="t2-val-points">${t2.rankingPoints.toLocaleString()}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">⭐ Star Player</span>
-                    <span class="stat-value">${t2.starPlayer}</span>
-                </div>
-                <div class="stat-item scorer-stat-item">
-                    <span class="stat-label">⚽ Top Scorer</span>
-                    <span class="stat-value scorer-stat-value">${t2.topScorer}${t2.topScorerActive ? ' <span class="live-badge"><span class="live-dot"></span>Active</span>' : ''}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">🧑‍💼 Current Coach</span>
-                    <span class="stat-value">${t2.coach}</span>
+                <div class="metric-row">
+                    <div class="metric-val team1-side ${t1PointsWin ? 'better' : ''}" id="t1-val-points">${t1.rankingPoints.toLocaleString()}</div>
+                    <div class="metric-label">FIFA Points</div>
+                    <div class="metric-val team2-side ${t2PointsWin ? 'better' : ''}" id="t2-val-points">${t2.rankingPoints.toLocaleString()}</div>
                 </div>
             `;
         }
@@ -303,64 +245,52 @@ export const setupComparisonForm = () => {
         animateCount(document.getElementById('t1-val-points'), 1000, t1.rankingPoints, 1000, val => val.toLocaleString());
         animateCount(document.getElementById('t2-val-points'), 1000, t2.rankingPoints, 1000, val => val.toLocaleString());
 
-        // Progress gauge split bars rendering
-        const buildRatioBar = (title, t1Val, t2Val, higherIsBetter = true) => {
-            let pct1 = 50;
-            let pct2 = 50;
-
-            if (higherIsBetter) {
-                const sum = t1Val + t2Val;
-                if (sum > 0) {
-                    pct1 = (t1Val / sum) * 100;
-                    pct2 = (t2Val / sum) * 100;
-                }
-            } else {
-                if (t1Val === t2Val) {
-                    pct1 = 50;
-                    pct2 = 50;
-                } else {
-                    const sum = t1Val + t2Val;
-                    pct1 = ((sum - t1Val) / sum) * 100;
-                    pct2 = ((sum - t2Val) / sum) * 100;
-                }
-            }
-
-            const displayVal1 = typeof t1Val === 'number' && t1Val % 1 !== 0 ? t1Val.toFixed(2) : t1Val;
-            const displayVal2 = typeof t2Val === 'number' && t2Val % 1 !== 0 ? t2Val.toFixed(2) : t2Val;
-
-            return `
-                <div class="split-bar-metric">
-                    <div class="split-bar-col team1-side">
-                        <span class="split-val">${displayVal1}</span>
-                        <div class="split-track">
-                            <div class="split-fill team1-fill" style="width: 0%; max-width: ${pct1}%"></div>
+        // Populate squad profiles (Key Personnel) vertical scrolling lists
+        const squadList = document.getElementById('overview-squad-profiles-list');
+        if (squadList) {
+            squadList.innerHTML = `
+                <div class="squad-profile-section">
+                    <div class="squad-profile-header">
+                        <span class="squad-profile-flag">${getFlagHTML(team1Key, "squad-profile-flag-img")}</span>
+                        <span class="squad-profile-team-name">${team1Key}</span>
+                    </div>
+                    <div class="squad-profile-items">
+                        <div class="squad-profile-item">
+                            <span class="squad-profile-label">Star Player</span>
+                            <span class="squad-profile-value">${t1.starPlayer}</span>
+                        </div>
+                        <div class="squad-profile-item">
+                            <span class="squad-profile-label">Top Scorer</span>
+                            <span class="squad-profile-value">${t1.topScorer}${t1.topScorerActive ? ' <span class="live-badge"><span class="live-dot"></span>Active</span>' : ''}</span>
+                        </div>
+                        <div class="squad-profile-item">
+                            <span class="squad-profile-label">Current Coach</span>
+                            <span class="squad-profile-value">${t1.coach}</span>
                         </div>
                     </div>
-                    <div class="split-bar-label">${title}</div>
-                    <div class="split-bar-col team2-side">
-                        <div class="split-track">
-                            <div class="split-fill team2-fill" style="width: 0%; max-width: ${pct2}%"></div>
+                </div>
+                
+                <div class="squad-profile-section">
+                    <div class="squad-profile-header">
+                        <span class="squad-profile-flag">${getFlagHTML(team2Key, "squad-profile-flag-img")}</span>
+                        <span class="squad-profile-team-name">${team2Key}</span>
+                    </div>
+                    <div class="squad-profile-items">
+                        <div class="squad-profile-item">
+                            <span class="squad-profile-label">Star Player</span>
+                            <span class="squad-profile-value">${t2.starPlayer}</span>
                         </div>
-                        <span class="split-val">${displayVal2}</span>
+                        <div class="squad-profile-item">
+                            <span class="squad-profile-label">Top Scorer</span>
+                            <span class="squad-profile-value">${t2.topScorer}${t2.topScorerActive ? ' <span class="live-badge"><span class="live-dot"></span>Active</span>' : ''}</span>
+                        </div>
+                        <div class="squad-profile-item">
+                            <span class="squad-profile-label">Current Coach</span>
+                            <span class="squad-profile-value">${t2.coach}</span>
+                        </div>
                     </div>
                 </div>
             `;
-        };
-
-        if (visualBars) {
-            visualBars.innerHTML = `
-                ${buildRatioBar("FIFA Ranking", t1.fifaRanking, t2.fifaRanking, false)}
-                ${buildRatioBar("World Cups", t1.worldCups, t2.worldCups)}
-                ${buildRatioBar("Confederation Titles", t1.confederationTitles, t2.confederationTitles)}
-                ${buildRatioBar("FIFA Points", t1.rankingPoints, t2.rankingPoints)}
-            `;
-
-            setTimeout(() => {
-                const fills1 = visualBars.querySelectorAll('.split-fill.team1-fill');
-                const fills2 = visualBars.querySelectorAll('.split-fill.team2-fill');
-                fills1.forEach(f => f.style.width = f.style.maxWidth);
-                fills2.forEach(f => f.style.width = f.style.maxWidth);
-            }, 100);
         }
 
         // Draw Tactics Field nodes
