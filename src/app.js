@@ -134,7 +134,51 @@ const showPwaNotificationPill = () => {
             pill.classList.remove('active');
         });
         
-        // Action trigger listener
+        // Touch gesture swipe-to-dismiss listeners for the pill itself (up/left/right)
+        let pStartX = 0;
+        let pStartY = 0;
+        let pStartTime = 0;
+        let isPillSwipe = false;
+
+        pill.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            pStartX = e.touches[0].clientX;
+            pStartY = e.touches[0].clientY;
+            pStartTime = Date.now();
+            isPillSwipe = false;
+        }, { passive: true });
+
+        pill.addEventListener('touchmove', (e) => {
+            if (e.touches.length !== 1) return;
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            const deltaX = currentX - pStartX;
+            const deltaY = currentY - pStartY;
+
+            // Mark as active swipe gesture if swiped up or side-to-side significantly
+            if (deltaY < -15 || Math.abs(deltaX) > 20) {
+                isPillSwipe = true;
+            }
+        }, { passive: true });
+
+        pill.addEventListener('touchend', (e) => {
+            if (!isPillSwipe) return;
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            const deltaX = endX - pStartX;
+            const deltaY = endY - pStartY;
+            const duration = Date.now() - pStartTime;
+
+            // Trigger dismiss if swiped up or left/right swiftly
+            if ((deltaY < -30 || Math.abs(deltaX) > 40) && duration < 400) {
+                console.log('PWA notification pill swiped away.');
+                localStorage.setItem('pwa_prompt_dismissed_time', String(Date.now()));
+                pill.classList.remove('active');
+            }
+            isPillSwipe = false;
+        }, { passive: true });
+        
+        // Action trigger listener - executed synchronously for Chrome/Android compatibility
         pill.querySelector('#pwa-pill-action').addEventListener('click', () => {
             if (isIOS) return; // iOS Safari manual flow
             
@@ -143,25 +187,25 @@ const showPwaNotificationPill = () => {
                 actionEl.textContent = "Landing to your device... 🚀";
             }
             
-            setTimeout(() => {
-                if (state.deferredInstallPrompt) {
-                    state.deferredInstallPrompt.prompt();
-                    state.deferredInstallPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('PWA installation accepted.');
-                            pill.classList.remove('active');
-                        } else {
-                            console.log('PWA installation dismissed.');
-                            if (actionEl) {
-                                actionEl.textContent = "⚽ Drop the browser. Add to Home Screen for the full-screen experience.";
-                            }
+            // Native PWA prompt must be fired synchronously in response to a click event
+            if (state.deferredInstallPrompt) {
+                state.deferredInstallPrompt.prompt();
+                state.deferredInstallPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('PWA installation accepted.');
+                        pill.classList.remove('active');
+                    } else {
+                        console.log('PWA installation dismissed.');
+                        if (actionEl) {
+                            actionEl.textContent = "⚽ Drop the browser. Add to Home Screen for the full-screen experience.";
                         }
-                        state.deferredInstallPrompt = null;
-                    });
-                } else {
-                    pill.classList.remove('active');
-                }
-            }, 800);
+                    }
+                    state.deferredInstallPrompt = null;
+                });
+            } else {
+                console.warn('deferredInstallPrompt is null or unavailable at click time.');
+                pill.classList.remove('active');
+            }
         });
     }
     
