@@ -7,6 +7,7 @@ import { setupTrophyListeners } from './components/trophies.js';
 import { setupLiveArenaListeners, activateLiveArena, deactivateLiveArena } from './components/liveArena.js';
 import { fetchMatchesList } from './components/matchcentre/api.js';
 import { registerSwipeTabs } from './components/matchcentre/utils.js';
+import { state } from './components/matchcentre/state.js';
 
 // Sliding Tabs Navigation System
 const initTabSlider = () => {
@@ -92,6 +93,140 @@ const setupTabListeners = () => {
     }
 };
 
+const isAnyModalActive = () => {
+    const modalIds = ['match-detail-overlay', 'groups-overlay', 'bracket-overlay', 'explorer-overlay', 'team-selector-modal'];
+    return modalIds.some(id => {
+        const el = document.getElementById(id);
+        return el && el.classList.contains('open');
+    });
+};
+
+const showPwaNotificationPill = () => {
+    let pill = document.getElementById('pwa-install-pill');
+    if (!pill) {
+        pill = document.createElement('div');
+        pill.id = 'pwa-install-pill';
+        pill.className = 'pwa-notification-pill';
+        
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        
+        let actionText = "⚽ Drop the browser. Add to Home Screen for the full-screen experience.";
+        if (isIOS) {
+            actionText = "⚽ Tap Share 📤 and select 'Add to Home Screen' for the full-screen experience.";
+        }
+        
+        pill.innerHTML = `
+            <div class="pwa-pill-content" id="pwa-pill-action">${actionText}</div>
+            <button type="button" class="pwa-pill-close-btn" id="pwa-pill-close" aria-label="Dismiss">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        `;
+        
+        const viewport = document.getElementById('phone-viewport');
+        if (viewport) {
+            viewport.appendChild(pill);
+        }
+        
+        // Close button listener (7-day cooldown trigger!)
+        pill.querySelector('#pwa-pill-close').addEventListener('click', (e) => {
+            e.stopPropagation();
+            localStorage.setItem('pwa_prompt_dismissed_time', String(Date.now()));
+            pill.classList.remove('active');
+        });
+        
+        // Action trigger listener
+        pill.querySelector('#pwa-pill-action').addEventListener('click', () => {
+            if (isIOS) return; // iOS Safari manual flow
+            
+            const actionEl = document.getElementById('pwa-pill-action');
+            if (actionEl) {
+                actionEl.textContent = "Landing to your device... 🚀";
+            }
+            
+            setTimeout(() => {
+                if (state.deferredInstallPrompt) {
+                    state.deferredInstallPrompt.prompt();
+                    state.deferredInstallPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('PWA installation accepted.');
+                            pill.classList.remove('active');
+                        } else {
+                            console.log('PWA installation dismissed.');
+                            if (actionEl) {
+                                actionEl.textContent = "⚽ Drop the browser. Add to Home Screen for the full-screen experience.";
+                            }
+                        }
+                        state.deferredInstallPrompt = null;
+                    });
+                } else {
+                    pill.classList.remove('active');
+                }
+            }, 800);
+        });
+    }
+    
+    // Force layout reflow before activation to trigger spring animation
+    pill.offsetHeight;
+    pill.classList.add('active');
+    state.isPromptQueued = false;
+};
+
+const setupPwaPromptListeners = () => {
+    // Intercept standard beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        state.deferredInstallPrompt = e;
+    });
+
+    // Hide active banners once installation completes
+    window.addEventListener('appinstalled', () => {
+        console.log('App was successfully installed.');
+        const pill = document.getElementById('pwa-install-pill');
+        if (pill) {
+            pill.classList.remove('active');
+        }
+        state.deferredInstallPrompt = null;
+    });
+
+    // Start 27-second timer
+    setTimeout(() => {
+        const isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+        const dismissedTime = localStorage.getItem('pwa_prompt_dismissed_time');
+        const isCooldown = dismissedTime && (Date.now() - Number(dismissedTime) < 604800000); // 7 days (604,800,000 ms)
+
+        if (isInstalled || isCooldown) return;
+
+        if (isAnyModalActive()) {
+            state.isPromptQueued = true;
+            console.log("PWA install prompt queued: a modal is currently open.");
+        } else {
+            showPwaNotificationPill();
+        }
+    }, 27000);
+
+    // Setup MutationObserver to watch modals close and trigger queued prompts
+    const modalIds = ['match-detail-overlay', 'groups-overlay', 'bracket-overlay', 'explorer-overlay', 'team-selector-modal'];
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                if (!target.classList.contains('open')) {
+                    if (state.isPromptQueued && !isAnyModalActive()) {
+                        setTimeout(showPwaNotificationPill, 300);
+                    }
+                }
+            }
+        });
+    });
+
+    modalIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+        }
+    });
+};
+
 const setupGatewayListeners = () => {
     // Gateway switch theme button to Dark Theme on click
     document.getElementById("unlock-live-btn")?.addEventListener("click", () => {
@@ -157,6 +292,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     setupTabListeners();
     setupGatewayListeners();
+    setupPwaPromptListeners();
 
     // Fetch live FIFA rankings immediately on application load
     fetchLiveRankings();

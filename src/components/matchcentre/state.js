@@ -5,5 +5,7 @@ export const state = {
     currentLiveMatches: [],
     currentSelectedMatchDetails: null,
     dataFeedError: null,
-    matchesListInterval: null
+    matchesListInterval: null,
+    deferredInstallPrompt: null,
+    isPromptQueued: false
 };
