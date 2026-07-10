@@ -6,6 +6,7 @@ import { drawWorldCupMatchesTab } from './components/worldCupTab.js';
 import { setupTrophyListeners } from './components/trophies.js';
 import { setupLiveArenaListeners, activateLiveArena, deactivateLiveArena } from './components/liveArena.js';
 import { fetchMatchesList } from './components/matchcentre/api.js';
+import { registerSwipeTabs } from './components/matchcentre/utils.js';
 
 // Sliding Tabs Navigation System
 const initTabSlider = () => {
@@ -77,6 +78,18 @@ const setupTabListeners = () => {
             }
         });
     });
+
+    // Register swipe tabs for main comparison tab content
+    const tabContent = document.querySelector('.tab-content');
+    if (tabContent) {
+        registerSwipeTabs(tabContent, () => document.querySelectorAll('.tab-btn'));
+    }
+
+    // Register swipe tabs for match detail popup body statically (once at startup!)
+    const popupBody = document.getElementById('match-detail-popup-body');
+    if (popupBody) {
+        registerSwipeTabs(popupBody, () => popupBody.querySelectorAll('.popup-tab-btn'));
+    }
 };
 
 const setupGatewayListeners = () => {

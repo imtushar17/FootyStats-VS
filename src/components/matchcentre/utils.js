@@ -437,4 +437,87 @@ export const parseGameDate = (game) => {
     return new Date(0);
 };
 
+export const registerSwipeTabs = (container, getTabButtons) => {
+    if (!container) return;
+
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+    let isSwipeGesture = null; // null: undecided, true: horizontal swipe, false: vertical scroll
+
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        startTime = Date.now();
+        isSwipeGesture = null;
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 1 || isSwipeGesture === false) return;
+
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+
+        if (isSwipeGesture === null) {
+            // Only decide once we move enough (e.g. > 10px in either direction)
+            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+                // Horizontal movement must dominate vertical scrolling by factor of 1.5
+                if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+                    isSwipeGesture = true;
+                } else {
+                    isSwipeGesture = false;
+                }
+            }
+        }
+
+        // If it is a confirmed horizontal swipe, prevent native scrolling/bounce
+        if (isSwipeGesture === true) {
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', (e) => {
+        if (isSwipeGesture !== true || e.changedTouches.length !== 1) return;
+
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+        const deltaX = endX - startX;
+        const deltaY = endY - startY;
+        const duration = Date.now() - startTime;
+
+        // Threshold check: distance > 60px, duration < 400ms
+        if (Math.abs(deltaX) > 60 && duration < 400) {
+            const tabButtons = Array.from(getTabButtons());
+            if (tabButtons.length === 0) return;
+
+            const activeIndex = tabButtons.findIndex(btn => btn.classList.contains('active'));
+            if (activeIndex === -1) return;
+
+            if (deltaX < 0) {
+                // Swipe left: Switch to next tab
+                if (activeIndex < tabButtons.length - 1) {
+                    if ('vibrate' in navigator) {
+                        try { navigator.vibrate(12); } catch(err){}
+                    }
+                    tabButtons[activeIndex + 1].click();
+                }
+            } else {
+                // Swipe right: Switch to previous tab
+                if (activeIndex > 0) {
+                    if ('vibrate' in navigator) {
+                        try { navigator.vibrate(12); } catch(err){}
+                    }
+                    tabButtons[activeIndex - 1].click();
+                }
+            }
+        }
+        isSwipeGesture = null;
+    }, { passive: false });
+};
+
 
