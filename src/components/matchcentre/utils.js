@@ -462,10 +462,10 @@ export const registerSwipeTabs = (container, getTabButtons) => {
         const deltaY = currentY - startY;
 
         if (isSwipeGesture === null) {
-            // Only decide once we move enough (e.g. > 10px in either direction)
-            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-                // Horizontal movement must dominate vertical scrolling by factor of 1.5
-                if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+            // Decide quickly with a smaller movement threshold (5px)
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                // Relaxed angle check: horizontal movement dominates vertical scroll by a factor of 1.1
+                if (Math.abs(deltaX) > Math.abs(deltaY) * 1.1) {
                     isSwipeGesture = true;
                 } else {
                     isSwipeGesture = false;
@@ -490,8 +490,8 @@ export const registerSwipeTabs = (container, getTabButtons) => {
         const deltaY = endY - startY;
         const duration = Date.now() - startTime;
 
-        // Threshold check: distance > 60px, duration < 400ms
-        if (Math.abs(deltaX) > 60 && duration < 400) {
+        // Snappy threshold check: distance > 35px, duration < 500ms
+        if (Math.abs(deltaX) > 35 && duration < 500) {
             const tabButtons = Array.from(getTabButtons());
             if (tabButtons.length === 0) return;
 
@@ -502,7 +502,7 @@ export const registerSwipeTabs = (container, getTabButtons) => {
                 // Swipe left: Switch to next tab
                 if (activeIndex < tabButtons.length - 1) {
                     if ('vibrate' in navigator) {
-                        try { navigator.vibrate(12); } catch(err){}
+                        try { navigator.vibrate(10); } catch(err){}
                     }
                     tabButtons[activeIndex + 1].click();
                 }
@@ -510,7 +510,7 @@ export const registerSwipeTabs = (container, getTabButtons) => {
                 // Swipe right: Switch to previous tab
                 if (activeIndex > 0) {
                     if ('vibrate' in navigator) {
-                        try { navigator.vibrate(12); } catch(err){}
+                        try { navigator.vibrate(10); } catch(err){}
                     }
                     tabButtons[activeIndex - 1].click();
                 }
