@@ -29,7 +29,7 @@ export const getBracketPlaceholderName = (game, isAway) => {
     return "TBD";
 };
 
-// Tree structure mapping for drawing SVG orthogonal connecting lines
+// Tree structure mapping for drawing SVG connections
 const parentChildMap = {
     "89": ["74", "77"],
     "90": ["73", "75"],
@@ -53,13 +53,20 @@ const colHeights = [1584, 804, 414, 218, 120];
 
 export const drawConnections = () => {
     const svg = document.getElementById("bracket-connections-svg");
-    if (!svg) return;
+    const wrapper = document.getElementById("bracket-games-grid");
+    const flex = document.getElementById("bracket-columns-flex");
+    if (!svg || !wrapper || !flex) return;
+
+    // Clear previous SVG contents
     svg.innerHTML = "";
 
-    const wrapper = document.getElementById("bracket-games-grid");
-    if (!wrapper) return;
-    const wrapperRect = wrapper.getBoundingClientRect();
+    // Set SVG size to cover the entire scrollable content bounds dynamically
+    const scrollW = flex.scrollWidth || wrapper.scrollWidth || 1500;
+    const scrollH = flex.scrollHeight || wrapper.scrollHeight || 1620;
+    svg.setAttribute("width", scrollW);
+    svg.setAttribute("height", scrollH);
 
+    const wrapperRect = wrapper.getBoundingClientRect();
     const games = state.worldCupGames || [];
     const gamesMap = {};
     games.forEach(g => {
@@ -82,7 +89,7 @@ export const drawConnections = () => {
             const parentRect = parentNode.getBoundingClientRect();
             const childRect = childNode.getBoundingClientRect();
 
-            // Calculate exact static coordinates within the scrollable content canvas
+            // Calculate precise coordinates relative to the scrollable content canvas
             const x1 = parentRect.right - wrapperRect.left + wrapper.scrollLeft;
             const y1 = parentRect.top + parentRect.height / 2 - wrapperRect.top + wrapper.scrollTop;
 
@@ -121,7 +128,21 @@ export const drawConnections = () => {
 
 export const renderKnockoutBracket = (container) => {
     if (!container) return;
+    
+    // Clear container
     container.innerHTML = "";
+
+    // Create SVG overlay inside the scroll wrapper so it moves naturally
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.className = "connections-svg";
+    svg.id = "bracket-connections-svg";
+    container.appendChild(svg);
+
+    // Create flex wrapper to hold columns separate from SVG
+    const flexWrapper = document.createElement("div");
+    flexWrapper.className = "bracket-columns-flex";
+    flexWrapper.id = "bracket-columns-flex";
+    container.appendChild(flexWrapper);
 
     const columnRounds = [
         { key: "r32", title: "Round of 32", className: "column-r32", ids: ["74", "77", "73", "75", "83", "84", "81", "82", "76", "78", "79", "80", "86", "88", "85", "87"] },
@@ -289,7 +310,7 @@ export const renderKnockoutBracket = (container) => {
             }
         }
 
-        container.appendChild(col);
+        flexWrapper.appendChild(col);
     });
 
     // Setup interactive scroll & navigation bindings
@@ -393,7 +414,13 @@ const setupBracketInteractiveNavigation = (wrapper) => {
         });
     });
 
-    // Initialize layout height & draw connections
+    // Multi-staged layout updates to guarantee precision rendering after image/font loads
+    setTimeout(updateLayoutWidths, 50);
+    setTimeout(updateLayoutWidths, 150);
+    setTimeout(updateLayoutWidths, 500);
+    setTimeout(updateLayoutWidths, 1000);
+
+    // Initialize layout height & scroll to first column
     setTimeout(() => {
         wrapper.scrollLeft = 0;
         if (canvas) canvas.style.height = `${colHeights[0]}px`;
