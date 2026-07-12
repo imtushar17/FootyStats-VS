@@ -56,9 +56,9 @@ export const drawConnections = () => {
     if (!svg) return;
     svg.innerHTML = "";
 
-    const canvas = document.getElementById("bracket-canvas");
-    if (!canvas) return;
-    const canvasRect = canvas.getBoundingClientRect();
+    const wrapper = document.getElementById("bracket-games-grid");
+    if (!wrapper) return;
+    const wrapperRect = wrapper.getBoundingClientRect();
 
     const games = state.worldCupGames || [];
     const gamesMap = {};
@@ -82,11 +82,12 @@ export const drawConnections = () => {
             const parentRect = parentNode.getBoundingClientRect();
             const childRect = childNode.getBoundingClientRect();
 
-            const x1 = parentRect.right - canvasRect.left;
-            const y1 = parentRect.top + parentRect.height / 2 - canvasRect.top;
+            // Calculate exact static coordinates within the scrollable content canvas
+            const x1 = parentRect.right - wrapperRect.left + wrapper.scrollLeft;
+            const y1 = parentRect.top + parentRect.height / 2 - wrapperRect.top + wrapper.scrollTop;
 
-            const x2 = childRect.left - canvasRect.left;
-            const y2 = childRect.top + childRect.height / 2 - canvasRect.top;
+            const x2 = childRect.left - wrapperRect.left + wrapper.scrollLeft;
+            const y2 = childRect.top + childRect.height / 2 - wrapperRect.top + wrapper.scrollTop;
 
             // Flowing cubic bezier curve (thread strings)
             const controlOffset = (x2 - x1) * 0.55;
@@ -323,11 +324,19 @@ const setupBracketInteractiveNavigation = (wrapper) => {
         window.addEventListener("resize", updateLayoutWidths);
     }
 
+    let lastActiveIndex = -1;
+
     // Scroll listener on horizontal scroll wrapper
     wrapper.addEventListener("scroll", () => {
         const scrollLeft = wrapper.scrollLeft;
         const stepWidth = parseFloat(wrapper.dataset.stepWidth) || 298;
         const activeColIndex = Math.round(scrollLeft / stepWidth);
+
+        // Throttle scroll triggers: only execute when active column actually changes
+        if (activeColIndex === lastActiveIndex) {
+            return;
+        }
+        lastActiveIndex = activeColIndex;
 
         // Update active round tabs
         tabs.forEach((tab, idx) => {
@@ -362,7 +371,7 @@ const setupBracketInteractiveNavigation = (wrapper) => {
             canvas.style.height = `${colHeights[activeColIndex]}px`;
         }
 
-        // Redraw connections
+        // Redraw connections to match new vertical height positions
         drawConnections();
     });
 
@@ -391,7 +400,3 @@ const setupBracketInteractiveNavigation = (wrapper) => {
         updateLayoutWidths();
     }, 150);
 };
-
-if (typeof window !== "undefined") {
-    window.addEventListener("resize", drawConnections);
-}
