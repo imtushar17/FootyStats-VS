@@ -1248,6 +1248,13 @@ body.dark-theme .calendar-date-header {
    Visual Knockout Bracket & Connectors
    ========================================================================== */
 /* Bracket Layout & Snapping Viewport Styles */
+#bracket-overlay .explorer-box {
+    height: 85vh;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
 .round-tabs-bar {
     display: flex;
     gap: 6px;
@@ -1303,7 +1310,6 @@ body.dark-theme .round-tab-btn.active {
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
-    max-height: 70vh;
 }
 
 .bracket-viewport-container::-webkit-scrollbar {
@@ -1332,7 +1338,7 @@ body.light-theme .bracket-viewport-container::-webkit-scrollbar-thumb {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    padding: 30px 81px; /* Center-centering peeking padding */
+    padding: 30px 0px; /* Left and right padding set dynamically by JS */
     box-sizing: border-box;
     width: 100%;
     height: 100%;

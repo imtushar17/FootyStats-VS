@@ -60,14 +60,24 @@ export const drawConnections = () => {
     if (!canvas) return;
     const canvasRect = canvas.getBoundingClientRect();
 
+    const games = state.worldCupGames || [];
+    const gamesMap = {};
+    games.forEach(g => {
+        gamesMap[g.id] = g;
+    });
+
+    const normalize = (name) => name ? name.toUpperCase().trim() : "";
+
     Object.keys(parentChildMap).forEach(childId => {
         const childNode = document.getElementById(`node-${childId}`);
-        if (!childNode) return;
+        const childGame = gamesMap[childId];
+        if (!childNode || !childGame) return;
 
         const parentIds = parentChildMap[childId];
         parentIds.forEach(parentId => {
             const parentNode = document.getElementById(`node-${parentId}`);
-            if (!parentNode) return;
+            const parentGame = gamesMap[parentId];
+            if (!parentNode || !parentGame) return;
 
             const parentRect = parentNode.getBoundingClientRect();
             const childRect = childNode.getBoundingClientRect();
@@ -78,23 +88,29 @@ export const drawConnections = () => {
             const x2 = childRect.left - canvasRect.left;
             const y2 = childRect.top + childRect.height / 2 - canvasRect.top;
 
-            const x_mid = x1 + (x2 - x1) / 2;
-
-            // Orthogonal clean step line path: ─┐ and ─┘ meeting
-            const d = `M ${x1} ${y1} H ${x_mid} V ${y2} H ${x2}`;
+            // Flowing cubic bezier curve (thread strings)
+            const controlOffset = (x2 - x1) * 0.55;
+            const d = `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2} ${y2}`;
 
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
             path.setAttribute("d", d);
             
-            // Highlight path if both matches have active highlighted path
-            if (parentNode.classList.contains("active-path") && childNode.classList.contains("active-path")) {
+            // Highlight path if the parent match winner has advanced to the child match
+            const parentWinner = parentGame.winner || (isMatchFinished(parentGame) && getGameScore(parentGame).home > getGameScore(parentGame).away ? (parentGame.homeTeam?.name || parentGame.home_team_name_en) : (parentGame.awayTeam?.name || parentGame.away_team_name_en));
+            const childHome = childGame.homeTeam?.name || childGame.home_team_name_en;
+            const childAway = childGame.awayTeam?.name || childGame.away_team_name_en;
+            
+            const isPathActive = parentWinner && 
+                                 (normalize(parentWinner) === normalize(childHome) || normalize(parentWinner) === normalize(childAway));
+
+            if (isPathActive) {
                 path.setAttribute("stroke", "var(--accent-dark, #0ea5e9)");
-                path.setAttribute("stroke-width", "3");
+                path.setAttribute("stroke-width", "2.5");
                 path.setAttribute("style", "filter: drop-shadow(0 0 4px rgba(14, 165, 233, 0.4));");
             } else {
                 const isDark = document.body.classList.contains("dark-theme");
-                path.setAttribute("stroke", isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)");
-                path.setAttribute("stroke-width", "2");
+                path.setAttribute("stroke", isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)");
+                path.setAttribute("stroke-width", "1.5");
             }
             path.setAttribute("fill", "none");
             svg.appendChild(path);
@@ -284,13 +300,33 @@ const setupBracketInteractiveNavigation = (wrapper) => {
     const dots = document.querySelectorAll(".dot-indicator");
     const canvas = document.getElementById("bracket-canvas");
 
-    const colWidth = 250;
-    const colGap = 48;
-    const stepWidth = colWidth + colGap;
+    const updateLayoutWidths = () => {
+        const rect = wrapper.getBoundingClientRect();
+        const containerWidth = rect.width || 412;
+        const colWidth = 250;
+        const colGap = 48;
+        const stepWidth = colWidth + colGap;
+
+        // Dynamic center-snap padding: centers the active column exactly in view
+        const paddingX = Math.max(24, (containerWidth - colWidth) / 2);
+        wrapper.style.paddingLeft = `${paddingX}px`;
+        wrapper.style.paddingRight = `${paddingX}px`;
+
+        wrapper.dataset.stepWidth = stepWidth;
+        wrapper.dataset.paddingX = paddingX;
+
+        drawConnections();
+    };
+
+    updateLayoutWidths();
+    if (typeof window !== "undefined") {
+        window.addEventListener("resize", updateLayoutWidths);
+    }
 
     // Scroll listener on horizontal scroll wrapper
     wrapper.addEventListener("scroll", () => {
         const scrollLeft = wrapper.scrollLeft;
+        const stepWidth = parseFloat(wrapper.dataset.stepWidth) || 298;
         const activeColIndex = Math.round(scrollLeft / stepWidth);
 
         // Update active round tabs
@@ -334,6 +370,7 @@ const setupBracketInteractiveNavigation = (wrapper) => {
     tabs.forEach(tab => {
         tab.addEventListener("click", () => {
             const colIdx = parseInt(tab.dataset.colIndex);
+            const stepWidth = parseFloat(wrapper.dataset.stepWidth) || 298;
             wrapper.scrollTo({ left: colIdx * stepWidth, behavior: 'smooth' });
         });
     });
@@ -342,6 +379,7 @@ const setupBracketInteractiveNavigation = (wrapper) => {
     dots.forEach(dot => {
         dot.addEventListener("click", () => {
             const colIdx = parseInt(dot.dataset.colIndex);
+            const stepWidth = parseFloat(wrapper.dataset.stepWidth) || 298;
             wrapper.scrollTo({ left: colIdx * stepWidth, behavior: 'smooth' });
         });
     });
@@ -350,7 +388,7 @@ const setupBracketInteractiveNavigation = (wrapper) => {
     setTimeout(() => {
         wrapper.scrollLeft = 0;
         if (canvas) canvas.style.height = `${colHeights[0]}px`;
-        drawConnections();
+        updateLayoutWidths();
     }, 150);
 };
 
