@@ -1346,6 +1346,7 @@ body.light-theme .bracket-viewport-container::-webkit-scrollbar-thumb {
     display: flex;
     gap: 48px;
     height: 100%;
+    width: max-content; /* Critical: prevents columns from shrinking and enables horizontal scroll/swipe */
     position: relative;
     align-items: center;
 }

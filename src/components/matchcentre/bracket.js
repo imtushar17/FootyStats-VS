@@ -331,8 +331,13 @@ const setupBracketInteractiveNavigation = (wrapper) => {
 
         // Dynamic center-snap padding: centers the active column exactly in view
         const paddingX = Math.max(24, (containerWidth - colWidth) / 2);
-        wrapper.style.paddingLeft = `${paddingX}px`;
-        wrapper.style.paddingRight = `${paddingX}px`;
+        
+        // Apply padding to flex sub-container instead of the scroll wrapper itself
+        const flex = document.getElementById("bracket-columns-flex");
+        if (flex) {
+            flex.style.paddingLeft = `${paddingX}px`;
+            flex.style.paddingRight = `${paddingX}px`;
+        }
 
         wrapper.dataset.stepWidth = stepWidth;
         wrapper.dataset.paddingX = paddingX;
