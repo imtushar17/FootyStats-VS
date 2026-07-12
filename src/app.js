@@ -306,14 +306,6 @@ const setupPwaPromptListeners = () => {
 };
 
 const setupGatewayListeners = () => {
-    // Gateway switch theme button to Dark Theme on click
-    document.getElementById("unlock-live-btn")?.addEventListener("click", () => {
-        const themeBtn = document.getElementById("theme-toggle");
-        if (themeBtn && !document.body.classList.contains('dark-theme')) {
-            themeBtn.click();
-        }
-    });
-
     // Gateway open archive button (starts World Cup mode)
     document.getElementById("open-archive-btn")?.addEventListener("click", () => {
         let overlay = document.getElementById('big-stage-transition-overlay');

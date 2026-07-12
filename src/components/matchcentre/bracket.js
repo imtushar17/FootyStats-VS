@@ -13,11 +13,11 @@ export const getBracketPlaceholderName = (game, isAway) => {
         "92": ["W79", "W80"],
         "93": ["W83", "W84"],
         "94": ["W81", "W82"],
-        "95": ["W86", "W88"], // Corrected pairings
-        "96": ["W85", "W87"], // Corrected pairings
+        "95": ["W86", "W88"],
+        "96": ["W85", "W87"],
         "97": ["W89", "W90"],
-        "98": ["W93", "W94"], // Corrected pairings
-        "99": ["W91", "W92"], // Corrected pairings
+        "98": ["W93", "W94"],
+        "99": ["W91", "W92"],
         "100": ["W95", "W96"],
         "101": ["W97", "W98"],
         "102": ["W99", "W100"],
@@ -29,19 +29,89 @@ export const getBracketPlaceholderName = (game, isAway) => {
     return "TBD";
 };
 
+// Tree structure mapping for drawing SVG orthogonal connecting lines
+const parentChildMap = {
+    "89": ["74", "77"],
+    "90": ["73", "75"],
+    "93": ["83", "84"],
+    "94": ["81", "82"],
+    "91": ["76", "78"],
+    "92": ["79", "80"],
+    "95": ["86", "88"],
+    "96": ["85", "87"],
+    "97": ["89", "90"],
+    "98": ["93", "94"],
+    "99": ["91", "92"],
+    "100": ["95", "96"],
+    "101": ["97", "98"],
+    "102": ["99", "100"],
+    "104": ["101", "102"]
+};
+
+// Compact height arrays corresponding to each round's list length + headers
+const colHeights = [1584, 804, 414, 218, 120];
+
+export const drawConnections = () => {
+    const svg = document.getElementById("bracket-connections-svg");
+    if (!svg) return;
+    svg.innerHTML = "";
+
+    const canvas = document.getElementById("bracket-canvas");
+    if (!canvas) return;
+    const canvasRect = canvas.getBoundingClientRect();
+
+    Object.keys(parentChildMap).forEach(childId => {
+        const childNode = document.getElementById(`node-${childId}`);
+        if (!childNode) return;
+
+        const parentIds = parentChildMap[childId];
+        parentIds.forEach(parentId => {
+            const parentNode = document.getElementById(`node-${parentId}`);
+            if (!parentNode) return;
+
+            const parentRect = parentNode.getBoundingClientRect();
+            const childRect = childNode.getBoundingClientRect();
+
+            const x1 = parentRect.right - canvasRect.left;
+            const y1 = parentRect.top + parentRect.height / 2 - canvasRect.top;
+
+            const x2 = childRect.left - canvasRect.left;
+            const y2 = childRect.top + childRect.height / 2 - canvasRect.top;
+
+            const x_mid = x1 + (x2 - x1) / 2;
+
+            // Orthogonal clean step line path: ─┐ and ─┘ meeting
+            const d = `M ${x1} ${y1} H ${x_mid} V ${y2} H ${x2}`;
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", d);
+            
+            // Highlight path if both matches have active highlighted path
+            if (parentNode.classList.contains("active-path") && childNode.classList.contains("active-path")) {
+                path.setAttribute("stroke", "var(--accent-dark, #0ea5e9)");
+                path.setAttribute("stroke-width", "3");
+                path.setAttribute("style", "filter: drop-shadow(0 0 4px rgba(14, 165, 233, 0.4));");
+            } else {
+                const isDark = document.body.classList.contains("dark-theme");
+                path.setAttribute("stroke", isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)");
+                path.setAttribute("stroke-width", "2");
+            }
+            path.setAttribute("fill", "none");
+            svg.appendChild(path);
+        });
+    });
+};
+
 export const renderKnockoutBracket = (container) => {
     if (!container) return;
     container.innerHTML = "";
 
-    const bracketWrapper = document.createElement("div");
-    bracketWrapper.className = "bracket-wrapper";
-
     const columnRounds = [
-        { key: "r32", title: "Round of 32", className: "column-r32", ids: ["74", "77", "73", "75", "76", "78", "79", "80", "81", "82", "83", "84", "86", "88", "85", "87"] },
-        { key: "r16", title: "Round of 16", className: "column-r16", ids: ["89", "90", "91", "92", "94", "93", "95", "96"] }, // Swapped 93 and 94 for visual alignment
-        { key: "qf", title: "Quarter-finals", className: "column-qf", ids: ["97", "99", "98", "100"] },
+        { key: "r32", title: "Round of 32", className: "column-r32", ids: ["74", "77", "73", "75", "83", "84", "81", "82", "76", "78", "79", "80", "86", "88", "85", "87"] },
+        { key: "r16", title: "Round of 16", className: "column-r16", ids: ["89", "90", "93", "94", "91", "92", "95", "96"] },
+        { key: "qf", title: "Quarter-finals", className: "column-qf", ids: ["97", "98", "99", "100"] },
         { key: "sf", title: "Semi-finals", className: "column-sf", ids: ["101", "102"] },
-        { key: "final", title: "Finals", className: "column-final", ids: ["104"] } // Draw only 104 in standard list for centered connection lines
+        { key: "final", title: "Finals", className: "column-final", ids: ["104"] }
     ];
 
     const gamesMap = {};
@@ -55,8 +125,8 @@ export const renderKnockoutBracket = (container) => {
         const hName = game.homeTeam?.name || game.home_team_name_en;
         const aName = game.awayTeam?.name || game.away_team_name_en;
 
-        const hasHome = hName && hName !== "undefined" && hName !== "null";
-        const hasAway = aName && aName !== "undefined" && aName !== "null";
+        const hasHome = hName && hName !== "undefined" && hName !== "null" && hName.toUpperCase().trim() !== "TBD";
+        const hasAway = aName && aName !== "undefined" && aName !== "null" && aName.toUpperCase().trim() !== "TBD";
         const isUnresolved = !hasHome || !hasAway;
 
         const homeDisplayName = hasHome ? hName : getBracketPlaceholderName(game, false);
@@ -133,7 +203,9 @@ export const renderKnockoutBracket = (container) => {
 
         const node = document.createElement("div");
         node.className = `bracket-match-node ${nodeClass} ${isUnresolved ? 'unresolved' : ''}`;
+        node.id = `node-${game.id}`;
         node.setAttribute("data-match-id", game.id);
+        node.setAttribute("data-unresolved", isUnresolved ? "true" : "false");
 
         const escapedHomeName = escapeHTML(homeDisplayName);
         const escapedAwayName = escapeHTML(awayDisplayName);
@@ -169,9 +241,11 @@ export const renderKnockoutBracket = (container) => {
         return node;
     };
 
-    columnRounds.forEach(round => {
+    columnRounds.forEach((round, colIdx) => {
         const col = document.createElement("div");
         col.className = `bracket-column ${round.className}`;
+        if (colIdx === 0) col.classList.add("active-round");
+        col.id = `col-${round.key}`;
 
         const colHeader = document.createElement("div");
         colHeader.className = "bracket-round-title";
@@ -198,8 +272,88 @@ export const renderKnockoutBracket = (container) => {
             }
         }
 
-        bracketWrapper.appendChild(col);
+        container.appendChild(col);
     });
 
-    container.appendChild(bracketWrapper);
+    // Setup interactive scroll & navigation bindings
+    setupBracketInteractiveNavigation(container);
 };
+
+const setupBracketInteractiveNavigation = (wrapper) => {
+    const tabs = document.querySelectorAll(".round-tab-btn");
+    const dots = document.querySelectorAll(".dot-indicator");
+    const canvas = document.getElementById("bracket-canvas");
+
+    const colWidth = 250;
+    const colGap = 48;
+    const stepWidth = colWidth + colGap;
+
+    // Scroll listener on horizontal scroll wrapper
+    wrapper.addEventListener("scroll", () => {
+        const scrollLeft = wrapper.scrollLeft;
+        const activeColIndex = Math.round(scrollLeft / stepWidth);
+
+        // Update active round tabs
+        tabs.forEach((tab, idx) => {
+            if (idx === activeColIndex) {
+                tab.classList.add("active");
+                tab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+            } else {
+                tab.classList.remove("active");
+            }
+        });
+
+        // Update dots
+        dots.forEach((dot, idx) => {
+            if (idx === activeColIndex) {
+                dot.classList.add("active");
+            } else {
+                dot.classList.remove("active");
+            }
+        });
+
+        // Update column active class
+        document.querySelectorAll(".bracket-column").forEach((col, idx) => {
+            if (idx === activeColIndex) {
+                col.classList.add("active-round");
+            } else {
+                col.classList.remove("active-round");
+            }
+        });
+
+        // Update dynamic canvas height
+        if (canvas && colHeights[activeColIndex]) {
+            canvas.style.height = `${colHeights[activeColIndex]}px`;
+        }
+
+        // Redraw connections
+        drawConnections();
+    });
+
+    // Click on round tab buttons to center column
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            const colIdx = parseInt(tab.dataset.colIndex);
+            wrapper.scrollTo({ left: colIdx * stepWidth, behavior: 'smooth' });
+        });
+    });
+
+    // Click on dot indicators to center column
+    dots.forEach(dot => {
+        dot.addEventListener("click", () => {
+            const colIdx = parseInt(dot.dataset.colIndex);
+            wrapper.scrollTo({ left: colIdx * stepWidth, behavior: 'smooth' });
+        });
+    });
+
+    // Initialize layout height & draw connections
+    setTimeout(() => {
+        wrapper.scrollLeft = 0;
+        if (canvas) canvas.style.height = `${colHeights[0]}px`;
+        drawConnections();
+    }, 150);
+};
+
+if (typeof window !== "undefined") {
+    window.addEventListener("resize", drawConnections);
+}

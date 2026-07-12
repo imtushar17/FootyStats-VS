@@ -1,4 +1,6 @@
 import { teamData } from '../data/teams.js';
+import { state } from './matchcentre/state.js';
+import { getWcTeamFlagHTML, normalizeTeamName } from './matchcentre/utils.js';
 
 const TEAM_COLORS = {
     // CONCACAF
@@ -253,4 +255,164 @@ export const setupSelectorListeners = () => {
         currentFilter = tab.dataset.filter;
         populateModalGrid();
     });
+
+    // Standalone Bracket selector listeners
+    const bracketCompareBtn = document.getElementById('bracket-compare-trigger');
+    const bracketModalClose = document.getElementById('bracket-modal-close');
+    const bracketModalOverlay = document.getElementById('bracket-selector-modal');
+    const roundNavContainer = document.querySelector('.bracket-round-nav');
+
+    bracketCompareBtn?.addEventListener('click', openBracketModal);
+    bracketModalClose?.addEventListener('click', closeBracketModal);
+    
+    bracketModalOverlay?.addEventListener('click', (e) => {
+        if (e.target === bracketModalOverlay) closeBracketModal();
+    });
+
+    roundNavContainer?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.round-nav-btn');
+        if (!btn) return;
+
+        roundNavContainer.querySelectorAll('.round-nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const roundKey = btn.dataset.round;
+        renderBracketModalSelection(roundKey);
+    });
+};
+
+export const openBracketModal = () => {
+    const modal = document.getElementById('bracket-selector-modal');
+    if (modal) {
+        modal.classList.add('open');
+        // Reset navigation tabs to active Round of 32
+        const roundNavContainer = document.querySelector('.bracket-round-nav');
+        if (roundNavContainer) {
+            roundNavContainer.querySelectorAll('.round-nav-btn').forEach(b => {
+                if (b.dataset.round === 'r32') b.classList.add('active');
+                else b.classList.remove('active');
+            });
+        }
+        renderBracketModalSelection('r32');
+    }
+};
+
+export const closeBracketModal = () => {
+    const modal = document.getElementById('bracket-selector-modal');
+    if (modal) {
+        modal.classList.remove('open');
+    }
+};
+
+export const renderBracketModalSelection = (roundKey) => {
+    const matchesListContainer = document.getElementById('bracket-matches-list');
+    if (!matchesListContainer) return;
+    
+    matchesListContainer.innerHTML = "";
+    
+    const roundIds = {
+        r32: ["74", "77", "73", "75", "76", "78", "79", "80", "81", "82", "83", "84", "86", "88", "85", "87"],
+        r16: ["89", "90", "91", "92", "94", "93", "95", "96"],
+        qf: ["97", "99", "98", "100"],
+        sf: ["101", "102"],
+        final: ["104"]
+    };
+    
+    const targetIds = roundIds[roundKey] || [];
+    const games = state.worldCupGames || [];
+    
+    // Map games by id for quick access
+    const gamesMap = {};
+    games.forEach(g => {
+        gamesMap[g.id] = g;
+    });
+    
+    targetIds.forEach(id => {
+        const game = gamesMap[id];
+        if (!game) return;
+        
+        // Home Team Details
+        const homeRawName = game.homeTeam?.name || game.home_team_name_en || "TBD";
+        const homeName = normalizeTeamName(homeRawName);
+        const hasHome = homeName && homeName !== "TBD" && homeName !== "undefined" && homeName !== "null";
+        
+        // Away Team Details
+        const awayRawName = game.awayTeam?.name || game.away_team_name_en || "TBD";
+        const awayName = normalizeTeamName(awayRawName);
+        const hasAway = awayName && awayName !== "TBD" && awayName !== "undefined" && awayName !== "null";
+        
+        // A match pairing is selectable ONLY if both teams are resolved in our database
+        const isSelectable = hasHome && hasAway && teamData[homeName] && teamData[awayName];
+        
+        const card = document.createElement('div');
+        card.className = `bracket-match-select-card ${isSelectable ? '' : 'disabled'}`;
+        
+        const homeFlagHTML = hasHome ? getWcTeamFlagHTML(homeName, "bracket-team-flag-img") : `<span class="flag-placeholder">🏳️</span>`;
+        const awayFlagHTML = hasAway ? getWcTeamFlagHTML(awayName, "bracket-team-flag-img") : `<span class="flag-placeholder">🏳️</span>`;
+        
+        card.innerHTML = `
+            <div class="bracket-card-team home">
+                ${homeFlagHTML}
+                <span class="bracket-team-card-name">${homeName}</span>
+            </div>
+            <div class="bracket-vs-badge">VS</div>
+            <div class="bracket-card-team away">
+                ${awayFlagHTML}
+                <span class="bracket-team-card-name">${awayName}</span>
+            </div>
+        `;
+        
+        if (isSelectable) {
+            card.addEventListener('click', () => {
+                selectBracketPairing(homeName, awayName);
+            });
+        }
+        
+        matchesListContainer.appendChild(card);
+    });
+    
+    if (matchesListContainer.children.length === 0) {
+        matchesListContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 13px;">No bracket matches found for this round.</div>`;
+    }
+};
+
+export const selectBracketPairing = (team1Key, team2Key) => {
+    const team1Input = document.getElementById('team1');
+    const team2Input = document.getElementById('team2');
+    const trigger1Flag = document.getElementById('team1-trigger-flag');
+    const trigger2Flag = document.getElementById('team2-trigger-flag');
+    const trigger1Name = document.getElementById('team1-trigger-name');
+    const trigger2Name = document.getElementById('team2-trigger-name');
+    const trigger1Btn = document.getElementById('team1-trigger');
+    const trigger2Btn = document.getElementById('team2-trigger');
+    const teamForm = document.getElementById('team-form');
+
+    // Populate slot 1
+    if (team1Input) team1Input.value = team1Key;
+    if (trigger1Flag) trigger1Flag.innerHTML = getFlagHTML(team1Key, "trigger-flag-img");
+    if (trigger1Name) trigger1Name.textContent = team1Key;
+    if (trigger1Btn) {
+        const color1 = TEAM_COLORS[team1Key.toLowerCase()] || 'var(--border-color)';
+        trigger1Btn.style.borderColor = color1;
+        trigger1Btn.style.borderWidth = '1.5px';
+        trigger1Btn.style.boxShadow = `0 4px 14px ${hexToRgba(color1, 0.15)}`;
+    }
+
+    // Populate slot 2
+    if (team2Input) team2Input.value = team2Key;
+    if (trigger2Flag) trigger2Flag.innerHTML = getFlagHTML(team2Key, "trigger-flag-img");
+    if (trigger2Name) trigger2Name.textContent = team2Key;
+    if (trigger2Btn) {
+        const color2 = TEAM_COLORS[team2Key.toLowerCase()] || 'var(--border-color)';
+        trigger2Btn.style.borderColor = color2;
+        trigger2Btn.style.borderWidth = '1.5px';
+        trigger2Btn.style.boxShadow = `0 4px 14px ${hexToRgba(color2, 0.15)}`;
+    }
+
+    closeBracketModal();
+
+    // Trigger comparison form submission immediately
+    if (team1Input?.value && team2Input?.value) {
+        teamForm?.dispatchEvent(new Event('submit'));
+    }
 };

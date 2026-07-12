@@ -1,42 +1,8 @@
 import { deactivateLiveArena } from './liveArena.js';
 
 export const toggleThemeLayouts = (isDark, animate = false) => {
-    const ticket = document.getElementById('live-gateway-ticket');
-    const unlockBtn = document.getElementById('unlock-live-btn');
-    const openArchiveBtn = document.getElementById('open-archive-btn');
-
-    if (isDark) {
-        if (unlockBtn) unlockBtn.classList.add('hidden');
-        if (openArchiveBtn) openArchiveBtn.classList.remove('hidden');
-
-        if (ticket) {
-            if (animate) {
-                // Set hidden states first for floating entry
-                ticket.classList.add('float-entry-hidden');
-                ticket.classList.add('float-entry-animate');
-                ticket.classList.remove('hidden');
-
-                // Animate entry after 2 seconds
-                setTimeout(() => {
-                    ticket.classList.remove('float-entry-hidden');
-                }, 2000);
-            } else {
-                ticket.classList.remove('float-entry-hidden');
-                ticket.classList.remove('float-entry-animate');
-                ticket.classList.remove('hidden');
-            }
-        }
-    } else {
-        if (ticket) {
-            ticket.classList.add('hidden');
-            ticket.classList.remove('float-entry-hidden');
-            ticket.classList.remove('float-entry-animate');
-        }
-        if (unlockBtn) unlockBtn.classList.remove('hidden');
-        if (openArchiveBtn) openArchiveBtn.classList.add('hidden');
-        document.body.classList.remove('world-cup-active');
-        deactivateLiveArena();
-    }
+    // Both Light Theme and Dark Theme now fully support the World Cup Archive section.
+    // Toggling themes inside World Cup mode will smoothly swap CSS variables without forcing exit.
 };
 
 export const initTheme = () => {

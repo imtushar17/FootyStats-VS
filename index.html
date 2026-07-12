@@ -43,28 +43,10 @@
             <p class="subtitle">Side-by-side national football team metrics & performance dashboard</p>
         </header>
 
-        <!-- Live World Cup Gateway Banner / Ticket (Light Mode) -->
-        <div class="live-gateway-ticket hidden" id="live-gateway-ticket">
-            <div class="ticket-glow"></div>
-            <div class="ticket-header">
-                <span class="live-pulse-badge"><span class="pulse-dot"></span>LIVE BROADCAST</span>
-                <span class="ticket-tournament">FIFA WORLD CUP 2026</span>
-            </div>
-            <div class="ticket-body">
-                <div class="ticket-info">
-                    <h3>World Cup Matchday Active</h3>
-                    <p>Track live scores, commentary, group standings, and stats under the stadium floodlights.</p>
-                </div>
-                <button type="button" class="ticket-action-btn" id="unlock-live-btn">
-                    <span>Unlock Live Arena</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                </button>
-                <button type="button" class="ticket-action-btn hidden" id="open-archive-btn">
-                    <span>World Cup Matchday Archive</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                </button>
-            </div>
-        </div>
+        <!-- Live World Cup Gateway Card -->
+        <button type="button" class="world-cup-gateway-card" id="open-archive-btn" aria-label="Open World Cup Archive">
+            <div class="gateway-card-glow"></div>
+        </button>
 
         <!-- Hidden inputs inside form to preserve compatibility with existing JS form validation if needed -->
         <form id="team-form">
@@ -92,6 +74,13 @@
                     <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </button>
             </div>
+            
+            <button type="button" class="bracket-compare-trigger" id="bracket-compare-trigger">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"></path>
+                </svg>
+                <span>Compare Match from Bracket</span>
+            </button>
         </form>
 
         <div id="comparison-result" class="hidden">
@@ -447,8 +436,36 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
-            <div class="explorer-grid" id="bracket-games-grid" style="display: block; max-height: 80vh; overflow-y: auto; padding: 16px 16px 40px 16px; box-sizing: border-box;">
-                <!-- Renders the horizontal bracket -->
+            
+            <!-- Clickable Navigation Round Tabs -->
+            <div class="round-tabs-bar" id="bracket-round-tabs">
+                <button class="round-tab-btn active" data-col-index="0">Round of 32</button>
+                <button class="round-tab-btn" data-col-index="1">Round of 16</button>
+                <button class="round-tab-btn" data-col-index="2">Quarter-finals</button>
+                <button class="round-tab-btn" data-col-index="3">Semi-finals</button>
+                <button class="round-tab-btn" data-col-index="4">Finals</button>
+            </div>
+
+            <!-- Vertical Scroll Viewport -->
+            <div class="bracket-viewport-container" id="bracket-viewport">
+                <!-- Scalable Canvas -->
+                <div class="bracket-canvas-container" id="bracket-canvas">
+                    <!-- SVG Connections Overlay -->
+                    <svg class="connections-svg" id="bracket-connections-svg"></svg>
+                    <!-- Horizontal Scroll Wrapper -->
+                    <div class="bracket-games-wrapper" id="bracket-games-grid">
+                        <!-- Populated via Javascript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dots Indicator Navigation -->
+            <div class="dots-navigation" id="bracket-dots-nav">
+                <div class="dot-indicator active" data-col-index="0"></div>
+                <div class="dot-indicator" data-col-index="1"></div>
+                <div class="dot-indicator" data-col-index="2"></div>
+                <div class="dot-indicator" data-col-index="3"></div>
+                <div class="dot-indicator" data-col-index="4"></div>
             </div>
         </div>
     </div>
@@ -516,6 +533,34 @@
 
             <!-- Scrollable country list grid -->
             <div class="modal-team-grid" id="modal-team-grid">
+                <!-- Populated via Javascript -->
+            </div>
+    </div>
+
+    <!-- Standalone Bracket Selector Modal Overlay -->
+    <div class="modal-overlay" id="bracket-selector-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Select Bracket Match</h3>
+                <button type="button" class="modal-close-btn" id="bracket-modal-close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Round Navigation tabs -->
+            <div class="bracket-round-nav">
+                <button type="button" class="round-nav-btn active" data-round="r32">R32</button>
+                <button type="button" class="round-nav-btn" data-round="r16">R16</button>
+                <button type="button" class="round-nav-btn" data-round="qf">QF</button>
+                <button type="button" class="round-nav-btn" data-round="sf">SF</button>
+                <button type="button" class="round-nav-btn" data-round="final">Finals</button>
+            </div>
+
+            <!-- Scrollable vertical list grid of bracket matches -->
+            <div class="bracket-matches-list" id="bracket-matches-list">
                 <!-- Populated via Javascript -->
             </div>
         </div>
