@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { mapFifaMatch } from './utils.js';
+import { FALLBACK_MATCHES } from '../../data/fallback_matches.js';
 
 let activeBanner = null;
 
@@ -90,34 +91,29 @@ export const fetchMatchesList = async () => {
     } catch (err) {
         console.warn("Failed to fetch matches list, loading offline fallback matches database:", err.message);
         
-        // Load static fallback database
-        try {
-            const { FALLBACK_MATCHES } = await import('../../data/fallback_matches.js');
-            state.currentLiveMatches = FALLBACK_MATCHES;
-            state.worldCupGames = FALLBACK_MATCHES;
-            console.log(`Successfully loaded ${state.worldCupGames.length} matches from static fallback database.`);
-            
-            // Re-render bracket if visible
-            const bracketOverlay = document.getElementById("bracket-overlay");
-            if (bracketOverlay && bracketOverlay.classList.contains("open")) {
-                const { renderKnockoutBracket } = await import('./bracket.js');
-                renderKnockoutBracket(document.getElementById("bracket-games-grid"));
-            }
+        // Load static fallback database (statically imported at the top)
+        state.currentLiveMatches = FALLBACK_MATCHES;
+        state.worldCupGames = FALLBACK_MATCHES;
+        console.log(`Successfully loaded ${state.worldCupGames.length} matches from static fallback database.`);
+        
+        // Re-render bracket if visible
+        const bracketOverlay = document.getElementById("bracket-overlay");
+        if (bracketOverlay && bracketOverlay.classList.contains("open")) {
+            import('./bracket.js').then(m => {
+                m.renderKnockoutBracket(document.getElementById("bracket-games-grid"));
+            }).catch(e => console.error(e));
+        }
 
-            // Trigger redrawing Match Hub tab if active
-            const activeTabBtn = document.querySelector('.tab-btn.active');
-            if (activeTabBtn && activeTabBtn.dataset.tab === 'wc2026') {
-                const t1 = document.getElementById('team1')?.value;
-                const t2 = document.getElementById('team2')?.value;
-                if (t1 && t2) {
-                    const { drawWorldCupMatchesTab } = await import('../worldCupTab.js');
-                    drawWorldCupMatchesTab(t1, t2);
-                }
+        // Trigger redrawing Match Hub tab if active
+        const activeTabBtn = document.querySelector('.tab-btn.active');
+        if (activeTabBtn && activeTabBtn.dataset.tab === 'wc2026') {
+            const t1 = document.getElementById('team1')?.value;
+            const t2 = document.getElementById('team2')?.value;
+            if (t1 && t2) {
+                import('../worldCupTab.js').then(m => {
+                    m.drawWorldCupMatchesTab(t1, t2);
+                }).catch(e => console.error(e));
             }
-        } catch (fallbackErr) {
-            console.error("Critical: Failed to load static fallback matches database:", fallbackErr);
-            state.dataFeedError = "Data Feed Temporarily Unavailable";
-            showDataFeedErrorBanner(state.dataFeedError);
         }
     }
 };
