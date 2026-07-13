@@ -1,5 +1,4 @@
-// Auto-generated static fallback matches database from live FIFA API
-export const FALLBACK_MATCHES = [
+[
   {
     "id": "1",
     "fifaMatchId": "400021443",
@@ -22904,4 +22903,4 @@ export const FALLBACK_MATCHES = [
       "IsUpdateable": null
     }
   }
-];
+]

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'footystats-v47';
+const CACHE_NAME = 'footystats-v48';
 const FLAGS_CACHE_NAME = 'footystats-flags';
 const FONTS_CACHE_NAME = 'footystats-fonts';
 const PORTRAITS_CACHE_NAME = 'footystats-portraits';
@@ -19,7 +19,7 @@ const ASSETS = [
   './src/app.js',
   './src/data/teams.js',
   './src/data/lineups.js',
-  './src/data/fallback_matches.js',
+  './assets/fallback_matches.json',
   './src/components/theme.js',
   './src/components/selector.js',
   './src/components/comparison.js',
