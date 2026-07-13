@@ -50,6 +50,13 @@ export const fetchMatchesList = async () => {
         if (!res.ok) {
             throw new Error(`HTTP Error ${res.status}`);
         }
+        
+        // Verify response is JSON, otherwise fallback to local database
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+            throw new Error("Response is not JSON");
+        }
+
         const data = await res.json();
         
         if (data && Array.isArray(data.Results)) {
@@ -57,6 +64,14 @@ export const fetchMatchesList = async () => {
             state.currentLiveMatches = mappedGames;
             state.worldCupGames = mappedGames;
             console.log(`Successfully fetched ${state.worldCupGames.length} matches from proxy.`);
+
+            // Re-render bracket if visible to prevent blank screens due to initial empty loads
+            const bracketOverlay = document.getElementById("bracket-overlay");
+            if (bracketOverlay && bracketOverlay.classList.contains("open")) {
+                import('./bracket.js').then(m => {
+                    m.renderKnockoutBracket(document.getElementById("bracket-games-grid"));
+                }).catch(err => console.error(err));
+            }
 
             // Trigger redrawing Match Hub tab if active
             const activeTabBtn = document.querySelector('.tab-btn.active');
@@ -73,9 +88,37 @@ export const fetchMatchesList = async () => {
             throw new Error("Invalid response format from matches proxy");
         }
     } catch (err) {
-        console.error("Failed to fetch matches list:", err.message);
-        state.dataFeedError = "Data Feed Temporarily Unavailable";
-        showDataFeedErrorBanner(state.dataFeedError);
+        console.warn("Failed to fetch matches list, loading offline fallback matches database:", err.message);
+        
+        // Load static fallback database
+        try {
+            const { FALLBACK_MATCHES } = await import('../../data/fallback_matches.js');
+            state.currentLiveMatches = FALLBACK_MATCHES;
+            state.worldCupGames = FALLBACK_MATCHES;
+            console.log(`Successfully loaded ${state.worldCupGames.length} matches from static fallback database.`);
+            
+            // Re-render bracket if visible
+            const bracketOverlay = document.getElementById("bracket-overlay");
+            if (bracketOverlay && bracketOverlay.classList.contains("open")) {
+                const { renderKnockoutBracket } = await import('./bracket.js');
+                renderKnockoutBracket(document.getElementById("bracket-games-grid"));
+            }
+
+            // Trigger redrawing Match Hub tab if active
+            const activeTabBtn = document.querySelector('.tab-btn.active');
+            if (activeTabBtn && activeTabBtn.dataset.tab === 'wc2026') {
+                const t1 = document.getElementById('team1')?.value;
+                const t2 = document.getElementById('team2')?.value;
+                if (t1 && t2) {
+                    const { drawWorldCupMatchesTab } = await import('../worldCupTab.js');
+                    drawWorldCupMatchesTab(t1, t2);
+                }
+            }
+        } catch (fallbackErr) {
+            console.error("Critical: Failed to load static fallback matches database:", fallbackErr);
+            state.dataFeedError = "Data Feed Temporarily Unavailable";
+            showDataFeedErrorBanner(state.dataFeedError);
+        }
     }
 };
 
