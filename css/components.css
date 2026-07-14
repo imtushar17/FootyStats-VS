@@ -704,13 +704,15 @@ body.dark-theme .compare-btn {
     position: absolute;
     top: 0;
     left: 16px;
-    right: 16px;
-    background: rgba(30, 30, 40, 0.85);
+    width: calc(100% - 32px);
+    height: 52px;
+    box-sizing: border-box;
+    background: rgba(15, 23, 42, 0.65);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 24px;
-    padding: 14px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 26px;
+    padding: 0 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
     z-index: 25000 !important;
     display: flex;
@@ -718,9 +720,17 @@ body.dark-theme .compare-btn {
     justify-content: center;
     text-align: center;
     pointer-events: none;
+    overflow: hidden;
     
-    /* Spring-like entry cubic-bezier */
-    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Spring-like entry cubic-bezier & smooth sizing transition */
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                width 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+                height 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+                border-radius 0.4s ease,
+                padding 0.4s ease,
+                background-color 0.4s ease,
+                border-color 0.4s ease,
+                box-shadow 0.4s ease;
     transform: translateY(-150%);
 }
 
@@ -729,14 +739,62 @@ body.dark-theme .compare-btn {
     transform: translateY(16px);
 }
 
+/* Translucent & Legible text styling */
 .pwa-pill-content {
-    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
     font-family: var(--font-heading);
     font-size: 12.5px;
     font-weight: 600;
     color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
     line-height: 1.45;
     cursor: pointer;
+    position: relative;
+}
+
+.pwa-pill-text {
+    opacity: 1;
+    transition: opacity 0.25s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pwa-pill-icon {
+    position: absolute;
+    font-size: 20px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Shrunk State - Collapsed into a floating soccer ball indicator in the top-left */
+.pwa-notification-pill.active.shrunk {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    padding: 0;
+    background: rgba(15, 23, 42, 0.75);
+    border-color: rgba(56, 189, 248, 0.35); /* Soft blue glow */
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.25);
+    cursor: pointer;
+}
+
+.pwa-notification-pill.active.shrunk .pwa-pill-text {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pwa-notification-pill.active.shrunk .pwa-pill-icon {
+    opacity: 1;
 }
 
 /* ==========================================

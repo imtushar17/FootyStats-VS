@@ -7,5 +7,6 @@ export const state = {
     dataFeedError: null,
     matchesListInterval: null,
     deferredInstallPrompt: null,
-    isPromptQueued: false
+    isPromptQueued: false,
+    pwaShrinkTimeout: null
 };

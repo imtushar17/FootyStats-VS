@@ -625,7 +625,7 @@
         // Register Service Worker for PWA with auto-update checks and immediate reload
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=49')
+                navigator.serviceWorker.register('./sw.js?v=50')
                     .then(reg => {
                         console.log('Service Worker registered successfully:', reg.scope);
                         // Force an update check on startup to pull the latest cache immediately

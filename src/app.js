@@ -140,22 +140,51 @@ const showIosInstallHelper = () => {
     helper.classList.add('active');
 };
 
+const shrinkPwaPill = () => {
+    const pill = document.getElementById('pwa-install-pill');
+    if (pill && pill.classList.contains('active')) {
+        pill.classList.add('shrunk');
+        console.log("PWA notification pill shrunk.");
+    }
+};
+
+const unfoldPwaPill = () => {
+    const pill = document.getElementById('pwa-install-pill');
+    if (pill) {
+        pill.classList.remove('shrunk');
+        console.log("PWA notification pill unfolded.");
+        
+        // Clear previous shrink timer if any
+        if (state.pwaShrinkTimeout) {
+            clearTimeout(state.pwaShrinkTimeout);
+        }
+        
+        // Start a new 5-second shrink timer (no activity cooldown)
+        state.pwaShrinkTimeout = setTimeout(() => {
+            shrinkPwaPill();
+        }, 5000);
+    }
+};
+
 const showPwaNotificationPill = () => {
     let pill = document.getElementById('pwa-install-pill');
+    
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    let actionText = "⚽ Drop the browser. Add to Home Screen for the full-screen experience.";
+    if (isIOS) {
+        actionText = "⚽ Tap Share 📤 and select 'Add to Home Screen' for the full-screen experience.";
+    }
+
     if (!pill) {
         pill = document.createElement('div');
         pill.id = 'pwa-install-pill';
         pill.className = 'pwa-notification-pill';
         
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        
-        let actionText = "⚽ Drop the browser. Add to Home Screen for the full-screen experience.";
-        if (isIOS) {
-            actionText = "⚽ Tap Share 📤 and select 'Add to Home Screen' for the full-screen experience.";
-        }
-        
         pill.innerHTML = `
-            <div class="pwa-pill-content" id="pwa-pill-action">${actionText}</div>
+            <div class="pwa-pill-content" id="pwa-pill-action">
+                <span class="pwa-pill-text">${actionText}</span>
+                <span class="pwa-pill-icon">⚽</span>
+            </div>
         `;
         
         const viewport = document.getElementById('phone-viewport');
@@ -200,25 +229,33 @@ const showPwaNotificationPill = () => {
 
             // Trigger dismiss if swiped in ANY direction swiftly (distance > 30px)
             if ((Math.abs(deltaY) > 30 || Math.abs(deltaX) > 30) && duration < 400) {
+                if (pill.classList.contains('shrunk')) return;
                 console.log('PWA notification pill swiped away.');
                 localStorage.setItem('pwa_prompt_dismissed_time', String(Date.now()));
                 pill.classList.remove('active');
+                if (state.pwaShrinkTimeout) clearTimeout(state.pwaShrinkTimeout);
             }
             isPillSwipe = false;
         }, { passive: true });
         
-        // Action trigger listener - executed synchronously for Chrome/Android compatibility
-        pill.querySelector('#pwa-pill-action').addEventListener('click', () => {
+        // Click action trigger listener
+        pill.addEventListener('click', (e) => {
+            if (pill.classList.contains('shrunk')) {
+                unfoldPwaPill();
+                return;
+            }
+            
             if (isIOS) {
                 // Show gorgeous visual install helper drawer on iOS Safari and dismiss pill
                 showIosInstallHelper();
                 pill.classList.remove('active');
+                if (state.pwaShrinkTimeout) clearTimeout(state.pwaShrinkTimeout);
                 return;
             }
             
-            const actionEl = document.getElementById('pwa-pill-action');
-            if (actionEl) {
-                actionEl.textContent = "Landing to your device... 🚀";
+            const textEl = pill.querySelector('.pwa-pill-text');
+            if (textEl) {
+                textEl.textContent = "Landing to your device... 🚀";
             }
             
             // Native PWA prompt must be fired synchronously in response to a click event
@@ -228,25 +265,39 @@ const showPwaNotificationPill = () => {
                     if (choiceResult.outcome === 'accepted') {
                         console.log('PWA installation accepted.');
                         pill.classList.remove('active');
+                        if (state.pwaShrinkTimeout) clearTimeout(state.pwaShrinkTimeout);
                     } else {
                         console.log('PWA installation dismissed.');
-                        if (actionEl) {
-                            actionEl.textContent = "⚽ Drop the browser. Add to Home Screen for the full-screen experience.";
+                        if (textEl) {
+                            textEl.textContent = actionText;
                         }
+                        unfoldPwaPill();
                     }
                     state.deferredInstallPrompt = null;
                 });
             } else {
                 console.warn('deferredInstallPrompt is null or unavailable at click time.');
                 pill.classList.remove('active');
+                if (state.pwaShrinkTimeout) clearTimeout(state.pwaShrinkTimeout);
             }
         });
     }
+    
+    // Reset state to active and clean up classes/timers
+    pill.classList.remove('shrunk');
     
     // Force layout reflow before activation to trigger spring animation
     pill.offsetHeight;
     pill.classList.add('active');
     state.isPromptQueued = false;
+
+    // Start 5-second shrink timer
+    if (state.pwaShrinkTimeout) {
+        clearTimeout(state.pwaShrinkTimeout);
+    }
+    state.pwaShrinkTimeout = setTimeout(() => {
+        shrinkPwaPill();
+    }, 5000);
 };
 
 const setupPwaPromptListeners = () => {
