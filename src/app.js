@@ -357,6 +357,15 @@ const setupPwaPromptListeners = () => {
 };
 
 const setupGatewayListeners = () => {
+    // Graceful slide-in entry animation for gateway card on load
+    const gatewayBtn = document.getElementById("open-archive-btn");
+    if (gatewayBtn) {
+        gatewayBtn.classList.add('float-entry-animate');
+        setTimeout(() => {
+            gatewayBtn.classList.remove('float-entry-hidden');
+        }, 150);
+    }
+
     // Gateway open archive button (starts World Cup mode)
     document.getElementById("open-archive-btn")?.addEventListener("click", () => {
         let overlay = document.getElementById('big-stage-transition-overlay');

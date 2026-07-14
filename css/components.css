@@ -274,12 +274,14 @@ body.dark-theme .compare-btn {
 }
 
 /* Graceful floating entry for Live Gateway Ticket / Matchday Archive card */
+.world-cup-gateway-card.float-entry-hidden,
 .live-gateway-ticket.float-entry-hidden {
     opacity: 0 !important;
     transform: translateY(35px) !important;
     pointer-events: none;
 }
 
+.world-cup-gateway-card.float-entry-animate,
 .live-gateway-ticket.float-entry-animate {
     transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s ease !important;
 }

@@ -44,7 +44,7 @@
         </header>
 
         <!-- Live World Cup Gateway Card -->
-        <button type="button" class="world-cup-gateway-card" id="open-archive-btn" aria-label="Open World Cup Archive">
+        <button type="button" class="world-cup-gateway-card float-entry-hidden" id="open-archive-btn" aria-label="Open World Cup Archive">
             <div class="gateway-card-glow"></div>
         </button>
 
@@ -625,7 +625,7 @@
         // Register Service Worker for PWA with auto-update checks and immediate reload
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=52')
+                navigator.serviceWorker.register('./sw.js?v=53')
                     .then(reg => {
                         console.log('Service Worker registered successfully:', reg.scope);
                         // Force an update check on startup to pull the latest cache immediately
