@@ -2030,28 +2030,44 @@ body.dark-theme .popup-event-row {
 /* ==========================================================================
    PREMIUM ELITE UI REDESIGN OVERRIDES (Google/SofaScore-inspired Aesthetics)
    ========================================================================== */
-
 /* Modernized Wrapper Background and Spacing */
 .live-arena-wrapper {
-    background: radial-gradient(circle at top left, #0f172a 0%, #090d16 100%) !important;
     padding: 20px 24px !important;
     gap: 16px !important;
+}
+body.dark-theme .live-arena-wrapper {
+    background: radial-gradient(circle at top left, #0f172a 0%, #090d16 100%) !important;
+}
+body:not(.dark-theme) .live-arena-wrapper {
+    background: radial-gradient(circle at top left, #f8fafc 0%, #e2e8f0 100%) !important;
 }
 
 /* Header Revamp */
 .arena-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     padding-bottom: 16px !important;
     margin-bottom: 16px !important;
 }
+body.dark-theme .arena-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+body:not(.dark-theme) .arena-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
 .arena-logo-area h2 {
     font-size: 18px !important;
     font-weight: 900 !important;
     letter-spacing: -0.5px !important;
-    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
 }
+body.dark-theme .arena-logo-area h2 {
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%) !important;
+}
+body:not(.dark-theme) .arena-logo-area h2 {
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
+}
+
 .arena-live-tag {
     background: rgba(239, 68, 68, 0.15) !important;
     border: 1px solid rgba(239, 68, 68, 0.3) !important;
@@ -2065,18 +2081,30 @@ body.dark-theme .popup-event-row {
 
 /* Sleek Premium Glassmorphic Cards */
 .arena-card {
-    background: rgba(15, 23, 42, 0.45) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 16px !important;
     padding: 18px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-.arena-card:hover {
+body.dark-theme .arena-card {
+    background: rgba(15, 23, 42, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+}
+body:not(.dark-theme) .arena-card {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.dark-theme .arena-card:hover {
     border-color: rgba(255, 255, 255, 0.12) !important;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+}
+body:not(.dark-theme) .arena-card:hover {
+    border-color: rgba(14, 165, 233, 0.2) !important;
+    box-shadow: 0 12px 40px rgba(14, 165, 233, 0.08) !important;
 }
 
 /* Card titles */
@@ -2084,28 +2112,48 @@ body.dark-theme .popup-event-row {
     font-size: 12.5px !important;
     font-weight: 900 !important;
     letter-spacing: 0.8px !important;
-    color: #f1f5f9 !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
     padding-bottom: 10px !important;
     margin-bottom: 14px !important;
     text-transform: uppercase;
 }
+body.dark-theme .card-section-title {
+    color: #f1f5f9 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+body:not(.dark-theme) .card-section-title {
+    color: #1e293b !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
 
 /* Modern Match Cards */
 .live-match-card {
-    background: rgba(30, 41, 59, 0.3) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
     border-radius: 12px !important;
     padding: 14px 16px !important;
     margin-bottom: 10px !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
     transition: all 0.25s ease !important;
 }
-.live-match-card:hover {
+body.dark-theme .live-match-card {
+    background: rgba(30, 41, 59, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+body:not(.dark-theme) .live-match-card {
+    background: rgba(241, 245, 249, 0.6) !important;
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01) !important;
+}
+
+body.dark-theme .live-match-card:hover {
     background: rgba(255, 255, 255, 0.04) !important;
     border-color: rgba(255, 255, 255, 0.15) !important;
     transform: translateY(-1.5px);
 }
+body:not(.dark-theme) .live-match-card:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-color: rgba(14, 165, 233, 0.2) !important;
+    transform: translateY(-1.5px);
+}
+
 .live-match-card.active-selected {
     background: rgba(16, 185, 129, 0.06) !important;
     border-color: #10b981 !important;
@@ -2119,22 +2167,45 @@ body.dark-theme .popup-event-row {
     height: 22px !important;
     border-radius: 50% !important; /* Elegant round flags */
     object-fit: cover !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
 }
+body.dark-theme .flag-icon-img, body.dark-theme .m-card-flag, body.dark-theme .console-flag, body.dark-theme .tactics-flag-img {
+    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+}
+body:not(.dark-theme) .flag-icon-img, body:not(.dark-theme) .m-card-flag, body:not(.dark-theme) .console-flag, body:not(.dark-theme) .tactics-flag-img {
+    border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+}
+
 .m-card-team-name {
     font-size: 13px !important;
     font-weight: 800 !important;
+}
+body.dark-theme .m-card-team-name {
     color: #e2e8f0 !important;
 }
+body:not(.dark-theme) .m-card-team-name {
+    color: #334155 !important;
+}
+
 .m-card-score {
     font-size: 15px !important;
     font-weight: 900 !important;
+}
+body.dark-theme .m-card-score {
     color: #ffffff !important;
 }
+body:not(.dark-theme) .m-card-score {
+    color: #0f172a !important;
+}
+
 .m-card-meta {
-    color: #94a3b8 !important;
     font-size: 8.5px !important;
+}
+body.dark-theme .m-card-meta {
+    color: #94a3b8 !important;
+}
+body:not(.dark-theme) .m-card-meta {
+    color: #64748b !important;
 }
 
 /* Status Pill Upgrades */
@@ -2170,10 +2241,16 @@ body.dark-theme .popup-event-row {
 
 /* Main Active Scoreboard Revamp */
 .console-match-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
     padding-bottom: 12px !important;
     margin-bottom: 16px !important;
 }
+body.dark-theme .console-match-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+body:not(.dark-theme) .console-match-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+
 .console-stadium {
     font-size: 11px !important;
     font-weight: 850 !important;
@@ -2183,26 +2260,47 @@ body.dark-theme .popup-event-row {
 }
 .console-group {
     font-size: 10.5px !important;
+}
+body.dark-theme .console-group {
     color: #94a3b8 !important;
 }
+body:not(.dark-theme) .console-group {
+    color: #64748b !important;
+}
 .console-scoreboard {
-    background: rgba(255, 255, 255, 0.02) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
     border-radius: 16px !important;
     padding: 16px 20px !important;
     margin-bottom: 16px !important;
 }
+body.dark-theme .console-scoreboard {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+body:not(.dark-theme) .console-scoreboard {
+    background: rgba(0, 0, 0, 0.01) !important;
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
 .console-name {
     font-size: 15px !important;
     font-weight: 900 !important;
+}
+body.dark-theme .console-name {
     color: #ffffff !important;
+}
+body:not(.dark-theme) .console-name {
+    color: #1e293b !important;
 }
 .console-score {
     font-size: 28px !important;
     font-weight: 900 !important;
     letter-spacing: 2px !important;
+}
+body.dark-theme .console-score {
     color: #ffffff !important;
     text-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+}
+body:not(.dark-theme) .console-score {
+    color: #0f172a !important;
 }
 .console-time-elapsed {
     font-size: 9.5px !important;
@@ -2214,19 +2312,24 @@ body.dark-theme .popup-event-row {
 
 /* Modern Tab Selectors */
 .console-tabs {
-    background: rgba(15, 23, 42, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
     border-radius: 30px !important;
     padding: 4px !important;
     display: flex !important;
     gap: 2px !important;
     margin-bottom: 18px !important;
 }
+body.dark-theme .console-tabs {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+body:not(.dark-theme) .console-tabs {
+    background: rgba(241, 245, 249, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
 .console-tab-btn {
     flex: 1 !important;
     background: transparent !important;
     border: none !important;
-    color: #94a3b8 !important;
     font-size: 11.5px !important;
     font-weight: 850 !important;
     padding: 8px 12px !important;
@@ -2234,9 +2337,19 @@ body.dark-theme .popup-event-row {
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     cursor: pointer !important;
 }
-.console-tab-btn:hover {
+body.dark-theme .console-tab-btn {
+    color: #94a3b8 !important;
+}
+body:not(.dark-theme) .console-tab-btn {
+    color: #64748b !important;
+}
+body.dark-theme .console-tab-btn:hover {
     color: #f1f5f9 !important;
     background: rgba(255, 255, 255, 0.03) !important;
+}
+body:not(.dark-theme) .console-tab-btn:hover {
+    color: #1e293b !important;
+    background: rgba(0, 0, 0, 0.02) !important;
 }
 .console-tab-btn.active {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
@@ -2248,8 +2361,14 @@ body.dark-theme .popup-event-row {
 .win-predictor-track {
     height: 14px !important;
     border-radius: 20px !important;
+}
+body.dark-theme .win-predictor-track {
     background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+body:not(.dark-theme) .win-predictor-track {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 .win-fill {
     font-size: 8.5px !important;
@@ -2266,8 +2385,14 @@ body.dark-theme .popup-event-row {
 .strength-track-wrapper {
     height: 6px !important;
     border-radius: 10px !important;
+}
+body.dark-theme .strength-track-wrapper {
     background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+body:not(.dark-theme) .strength-track-wrapper {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
 }
 .strength-fill {
     border-radius: 10px !important;
@@ -2275,7 +2400,12 @@ body.dark-theme .popup-event-row {
 .strength-team-val {
     font-weight: 900 !important;
     font-size: 11px !important;
+}
+body.dark-theme .strength-team-val {
     color: #ffffff !important;
+}
+body:not(.dark-theme) .strength-team-val {
+    color: #1e293b !important;
 }
 .strength-bar-label {
     font-size: 9.5px !important;
@@ -2286,26 +2416,48 @@ body.dark-theme .popup-event-row {
 
 /* Finished Lineups text List */
 .finished-lineup-list li {
-    background: rgba(255, 255, 255, 0.02) !important;
-    border-color: rgba(255, 255, 255, 0.04) !important;
     transition: all 0.2s ease !important;
 }
-.finished-lineup-list li:hover {
+body.dark-theme .finished-lineup-list li {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
+}
+body:not(.dark-theme) .finished-lineup-list li {
+    background: rgba(0, 0, 0, 0.01) !important;
+    border-color: rgba(0, 0, 0, 0.03) !important;
+}
+body.dark-theme .finished-lineup-list li:hover {
     background: rgba(255, 255, 255, 0.05) !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
+}
+body:not(.dark-theme) .finished-lineup-list li:hover {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.05) !important;
 }
 
 /* General Layout spacing */
 .explorer-action-buttons button {
-    background: rgba(30, 41, 59, 0.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
     border-radius: 10px !important;
     font-weight: 800 !important;
     transition: all 0.2s ease !important;
 }
-.explorer-action-buttons button:hover {
+body.dark-theme .explorer-action-buttons button {
+    background: rgba(30, 41, 59, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+body:not(.dark-theme) .explorer-action-buttons button {
+    background: rgba(241, 245, 249, 0.8) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    color: #334155 !important;
+}
+body.dark-theme .explorer-action-buttons button:hover {
     background: rgba(255, 255, 255, 0.04) !important;
     border-color: rgba(255, 255, 255, 0.12) !important;
+    transform: translateY(-0.5px) !important;
+}
+body:not(.dark-theme) .explorer-action-buttons button:hover {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
     transform: translateY(-0.5px) !important;
 }
 
