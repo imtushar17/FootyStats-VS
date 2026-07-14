@@ -118,35 +118,10 @@
     box-shadow: var(--shadow-md);
 }
 
-/* Gateway theme button layout settings */
-body:not(.dark-theme) #live-gateway-ticket {
-    display: none !important;
-}
-
-body.dark-theme #live-gateway-ticket {
-    display: flex !important;
-}
-
-body.dark-theme #unlock-live-btn {
-    display: none !important;
-}
-
-body.dark-theme #open-archive-btn {
-    display: flex !important;
-    background: #10b981 !important;
-    color: #ffffff !important;
-}
-
-body.dark-theme #open-archive-btn:hover {
-    background: #059669 !important;
-}
-
-body:not(.dark-theme) #open-archive-btn {
-    display: none !important;
-}
-
-body:not(.dark-theme) #unlock-live-btn {
-    display: flex !important;
+/* Gateway button styling for both light and dark themes */
+body:not(.dark-theme) .world-cup-gateway-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
 }
 
 /* World Cup Live Takeover Screen Dashboard */
