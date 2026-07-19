@@ -642,14 +642,14 @@ body.dark-theme .fut-portrait-silhouette {
     height: 100%;
     object-fit: cover;
     display: block;
-    transform: scale(1.5);
-    transform-origin: center 24%;
+    transform: scale(3.0);
+    transform-origin: center 10%;
     transition: transform 0.25s ease;
 }
 /* Crop strictly on images inside the crop container to create headshots */
 .player-pitch-avatar-crop img.player-pitch-avatar {
-    transform: scale(1.6);
-    transform-origin: center 20%;
+    transform: scale(3.5);
+    transform-origin: center 10%;
 }
 /* Exclude SVGs from headshot scaling so they don't pixelate */
 .player-pitch-avatar-wrapper svg.player-jersey-svg {
