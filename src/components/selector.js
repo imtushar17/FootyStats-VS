@@ -316,7 +316,7 @@ export const renderBracketModalSelection = (roundKey) => {
         r16: ["89", "90", "91", "92", "94", "93", "95", "96"],
         qf: ["97", "99", "98", "100"],
         sf: ["101", "102"],
-        final: ["104"]
+        final: ["104", "103"]
     };
     
     const targetIds = roundIds[roundKey] || [];
