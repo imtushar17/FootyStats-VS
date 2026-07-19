@@ -408,11 +408,14 @@
     margin-bottom: 8px;
     position: relative;
     z-index: 2;
+    overflow: hidden; /* Crop the zoomed chest/body and sides */
 }
 
 .fut-portrait-img-large {
-    height: 135px;
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(2.2); /* Zoom in to get the headshot */
+    transform-origin: center 12%; /* Anchor strictly around the head (top part) */
     filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
 }
 
