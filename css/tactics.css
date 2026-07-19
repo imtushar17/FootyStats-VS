@@ -408,14 +408,11 @@
     margin-bottom: 8px;
     position: relative;
     z-index: 2;
-    overflow: hidden; /* Crop the zoomed chest/body and sides */
 }
 
 .fut-portrait-img-large {
-    height: 100%;
-    object-fit: cover;
-    transform: scale(2.2); /* Zoom in to get the headshot */
-    transform-origin: center 12%; /* Anchor strictly around the head (top part) */
+    height: 135px;
+    object-fit: contain;
     filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
 }
 
@@ -645,14 +642,14 @@ body.dark-theme .fut-portrait-silhouette {
     height: 100%;
     object-fit: cover;
     display: block;
-    transform: scale(2.0);
-    transform-origin: center 12%;
+    transform: scale(1.5);
+    transform-origin: center 24%;
     transition: transform 0.25s ease;
 }
 /* Crop strictly on images inside the crop container to create headshots */
 .player-pitch-avatar-crop img.player-pitch-avatar {
-    transform: scale(2.4);
-    transform-origin: center 8%;
+    transform: scale(1.6);
+    transform-origin: center 20%;
 }
 /* Exclude SVGs from headshot scaling so they don't pixelate */
 .player-pitch-avatar-wrapper svg.player-jersey-svg {
