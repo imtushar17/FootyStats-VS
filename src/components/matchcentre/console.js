@@ -168,14 +168,20 @@ export const drawPreMatchHub = (game) => {
     const displayVenue = escapeHTML(getStadiumName(game.stadium_id));
     const displayGroup = game.group ? escapeHTML(game.group.replace("GROUP_", "Group ")) : "Knockout";
 
+    const homeColor = teamH.primaryColor || '#2563eb';
+    const awayColor = teamA.primaryColor || '#dc2626';
+
     hub.innerHTML = `
         <div class="prematch-hub">
             <div class="prematch-section">
-                <span class="prematch-section-title">🔮 Win Probability Predictor</span>
+                <span class="prematch-section-title" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-blue);"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
+                    <span>Win Probability Predictor</span>
+                </span>
                 <div class="win-predictor-track">
-                    <div class="win-fill home" style="width: ${homeWinPct}%;">${homeWinPct}%</div>
-                    <div class="win-fill draw" style="width: ${drawPct}%;">${drawPct}%</div>
-                    <div class="win-fill away" style="width: ${awayWinPct}%;">${awayWinPct}%</div>
+                    <div class="win-fill home" style="width: ${homeWinPct}%; background: ${homeColor} !important;">${homeWinPct}%</div>
+                    <div class="win-fill draw" style="width: ${drawPct}%; background: #64748b !important;">${drawPct}%</div>
+                    <div class="win-fill away" style="width: ${awayWinPct}%; background: ${awayColor} !important;">${awayWinPct}%</div>
                 </div>
                 <div class="win-labels-grid">
                     <span class="win-label home">${displayT1} Win</span>
@@ -185,38 +191,41 @@ export const drawPreMatchHub = (game) => {
             </div>
 
             <div class="prematch-section">
-                <span class="prematch-section-title">📊 Team Rating Comparison</span>
+                <span class="prematch-section-title" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-blue);"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    <span>Team Rating Comparison</span>
+                </span>
                 <div class="strength-compare-box">
                     <div class="strength-bar-row">
                         <span class="strength-team-val home">${hAtt}</span>
                         <div class="strength-track-wrapper">
-                            <div class="strength-fill home" style="width: ${hAtt}%; background: #10b981;"></div>
+                            <div class="strength-fill home" style="width: ${hAtt}%; background: ${homeColor} !important;"></div>
                         </div>
                         <span class="strength-bar-label">ATTACK</span>
                         <div class="strength-track-wrapper">
-                            <div class="strength-fill away" style="width: ${aAtt}%; background: #3b82f6;"></div>
+                            <div class="strength-fill away" style="width: ${aAtt}%; background: ${awayColor} !important;"></div>
                         </div>
                         <span class="strength-team-val away">${aAtt}</span>
                     </div>
                     <div class="strength-bar-row">
                         <span class="strength-team-val home">${hMid}</span>
                         <div class="strength-track-wrapper">
-                            <div class="strength-fill home" style="width: ${hMid}%; background: #10b981;"></div>
+                            <div class="strength-fill home" style="width: ${hMid}%; background: ${homeColor} !important;"></div>
                         </div>
                         <span class="strength-bar-label">MIDFIELD</span>
                         <div class="strength-track-wrapper">
-                            <div class="strength-fill away" style="width: ${aMid}%; background: #3b82f6;"></div>
+                            <div class="strength-fill away" style="width: ${aMid}%; background: ${awayColor} !important;"></div>
                         </div>
                         <span class="strength-team-val away">${aMid}</span>
                     </div>
                     <div class="strength-bar-row">
                         <span class="strength-team-val home">${hDef}</span>
                         <div class="strength-track-wrapper">
-                            <div class="strength-fill home" style="width: ${hDef}%; background: #10b981;"></div>
+                            <div class="strength-fill home" style="width: ${hDef}%; background: ${homeColor} !important;"></div>
                         </div>
                         <span class="strength-bar-label">DEFENSE</span>
                         <div class="strength-track-wrapper">
-                            <div class="strength-fill away" style="width: ${aDef}%; background: #3b82f6;"></div>
+                            <div class="strength-fill away" style="width: ${aDef}%; background: ${awayColor} !important;"></div>
                         </div>
                         <span class="strength-team-val away">${aDef}</span>
                     </div>
@@ -224,7 +233,10 @@ export const drawPreMatchHub = (game) => {
             </div>
 
             <div class="prematch-section">
-                <span class="prematch-section-title">📈 World Cup Form</span>
+                <span class="prematch-section-title" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-blue);"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                    <span>World Cup Form</span>
+                </span>
                 <div class="form-row">
                     <div class="form-team-info">
                         ${getWcTeamFlagHTML(t1, "standings-tbl-flag")}
@@ -233,7 +245,6 @@ export const drawPreMatchHub = (game) => {
                     <div class="form-pills">
                         ${formH.pills.map(p => `<span class="form-pill ${p}">${escapeHTML(p.toUpperCase())}</span>`).join('')}
                     </div>
-                    <span class="form-stats-text">${escapeHTML(formH.text)}</span>
                 </div>
                 <div class="form-row">
                     <div class="form-team-info">
@@ -243,12 +254,14 @@ export const drawPreMatchHub = (game) => {
                     <div class="form-pills">
                         ${formA.pills.map(p => `<span class="form-pill ${p}">${escapeHTML(p.toUpperCase())}</span>`).join('')}
                     </div>
-                    <span class="form-stats-text">${escapeHTML(formA.text)}</span>
                 </div>
             </div>
 
             <div class="prematch-section">
-                <span class="prematch-section-title">⭐ Key Star Player Matchup</span>
+                <span class="prematch-section-title" style="display: flex; align-items: center; gap: 6px;">
+                    <svg class="section-icon star-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" style="color: var(--accent-gold);"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span>Key Star Player Matchup</span>
+                </span>
                 <div class="matchup-cards-row">
                     <div class="matchup-card">
                         <span class="player-ovr">${ratingH}</span>
@@ -265,7 +278,10 @@ export const drawPreMatchHub = (game) => {
             </div>
 
             <div class="prematch-section">
-                <span class="prematch-section-title">🏟️ Match Information</span>
+                <span class="prematch-section-title" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-blue);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <span>Match Information</span>
+                </span>
                 <div class="prematch-info-box">
                     <div class="info-item">
                         <span class="info-label">Venue Stadium</span>
@@ -419,12 +435,12 @@ export const updateConsoleDetails = (game) => {
             (details.HomeTeam.Goals || []).forEach(g => {
                 if (String(g.Period) === "11") return; // Skip penalty shootout goals
                 const name = escapeHTML(getScorerName(details.HomeTeam, g.IdPlayer));
-                if (homeScorersList) homeScorersList.innerHTML += `<div>⚽ ${name} ${escapeHTML(g.Minute || "")}</div>`;
+                 if (homeScorersList) homeScorersList.innerHTML += `<div><svg width="6" height="6" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle; color: var(--text-muted); opacity: 0.6;"><circle cx="12" cy="12" r="12"></circle></svg>${name} ${escapeHTML(g.Minute || "")}</div>`;
             });
             (details.AwayTeam.Goals || []).forEach(g => {
                 if (String(g.Period) === "11") return; // Skip penalty shootout goals
                 const name = escapeHTML(getScorerName(details.AwayTeam, g.IdPlayer));
-                if (awayScorersList) awayScorersList.innerHTML += `<div>⚽ ${name} ${escapeHTML(g.Minute || "")}</div>`;
+                if (awayScorersList) awayScorersList.innerHTML += `<div><svg width="6" height="6" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle; color: var(--text-muted); opacity: 0.6;"><circle cx="12" cy="12" r="12"></circle></svg>${name} ${escapeHTML(g.Minute || "")}</div>`;
             });
         } else {
             if (game.home_scorers && game.home_scorers !== "null") {
@@ -442,6 +458,17 @@ export const updateConsoleDetails = (game) => {
         }
     } catch (e) {
         console.error("Failed to parse goals:", e.message);
+    }
+
+    const scorersBox = document.querySelector(".console-scorers-box");
+    if (scorersBox) {
+        const hasHomeScorers = homeScorersList && homeScorersList.innerHTML.trim() !== "";
+        const hasAwayScorers = awayScorersList && awayScorersList.innerHTML.trim() !== "";
+        if (hasHomeScorers || hasAwayScorers) {
+            scorersBox.classList.remove("hidden");
+        } else {
+            scorersBox.classList.add("hidden");
+        }
     }
 
     const statsGrid = document.getElementById("console-stats-grid");
@@ -519,12 +546,12 @@ export const updateConsoleDetails = (game) => {
 
         if (timelineEvents.length > 0) {
             timelineEvents.forEach(evt => {
-                let icon = '<span class="material-symbols-outlined" style="font-size: 16px; color: #2854C5; vertical-align: middle;">headset_mic</span>';
+                let icon = '<span class="material-symbols-outlined" style="font-size: 16px; color: var(--accent-blue); vertical-align: middle;">headset_mic</span>';
                 const typeCode = evt.Type;
-                if (typeCode === 0) icon = "⚽";
-                else if (typeCode === 2) icon = "🟨";
-                else if (typeCode === 3 || typeCode === 9) icon = "🟥";
-                else if (typeCode === 5) icon = "🔄";
+                if (typeCode === 0) icon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2C12 2 15 7 15 12C15 17 12 22 12 22C12 22 9 17 9 12C9 7 12 2 12 2Z"></path><path d="M2 12H22"></path></svg>';
+                else if (typeCode === 2) icon = '<span class="event-badge card-yellow" style="display: inline-block; width: 9px; height: 13px; background: #eab308; border-radius: 1.5px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.15);"></span>';
+                else if (typeCode === 3 || typeCode === 9) icon = '<span class="event-badge card-red" style="display: inline-block; width: 9px; height: 13px; background: #ef4444; border-radius: 1.5px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.15);"></span>';
+                else if (typeCode === 5) icon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>';
                 
                 const desc = evt.EventDescription?.[0]?.Description || "Match event";
 

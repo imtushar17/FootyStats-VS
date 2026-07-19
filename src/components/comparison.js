@@ -3,6 +3,116 @@ import { getFlagHTML } from './selector.js';
 import { drawTacticsPitch } from './tactics.js';
 import { drawTrophyCabinet } from './trophies.js';
 
+const hexToRgb = (hex) => {
+    if (!hex) return null;
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    const fullHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+};
+
+const getFutCardHTML = (teamKey, teamObj) => {
+    const starName = teamObj.starPlayer;
+    const star = teamObj.squad?.find(p => p.name === starName) || {
+        name: starName,
+        rating: teamObj.playerCard?.rating || 88,
+        pos: teamObj.playerCard?.pos || "ST",
+        stats: teamObj.playerCard || { pac: 85, sho: 85, pas: 85, dri: 85, def: 50, phy: 75 }
+    };
+
+    const ratingClass = star.rating >= 90 ? 'gold-tier' : (star.rating >= 80 ? 'silver-tier' : 'bronze-tier');
+    const isGk = star.pos === 'GK';
+    const l1 = isGk ? 'DIV' : 'PAC';
+    const l2 = isGk ? 'HAN' : 'SHO';
+    const l3 = isGk ? 'KIC' : 'PAS';
+    const l4 = isGk ? 'REF' : 'DRI';
+    const l5 = isGk ? 'SPD' : 'DEF';
+    const l6 = isGk ? 'POS' : 'PHY';
+
+    const flagHTML = getFlagHTML(teamKey, "fut-flag-img");
+    
+    const playstylesMap = {
+        "Lionel Messi": "Finesse Shot+",
+        "Kylian Mbappé": "Speedster+",
+        "Neymar Jr": "Trickster+",
+        "Kevin De Bruyne": "Incisive Pass+",
+        "Cristiano Ronaldo": "Power Shot+",
+        "Luka Modrić": "Trivela+"
+    };
+    const styleName = playstylesMap[star.name] || "";
+
+    return `
+        <div class="fut-card ${ratingClass}" data-team-color="${teamObj.primaryColor}">
+            <div class="fut-card-glow" style="background: radial-gradient(circle at 50% -20%, ${teamObj.primaryColor}55, transparent 75%);"></div>
+            
+            <div class="fut-card-top-row">
+                <div class="fut-top-left">
+                    <span class="fut-rating-large">${star.rating}</span>
+                    <span class="fut-position-pill">${star.pos}</span>
+                </div>
+                <div class="fut-top-right">
+                    <span class="fut-flag-large">${flagHTML}</span>
+                </div>
+            </div>
+            
+            <div class="fut-portrait-center-area">
+                ${(star.sofascoreId) ? `
+                    <img class="fut-portrait-img-large" 
+                         src="./assets/portraits/${star.sofascoreId}.png" 
+                         alt="${star.name}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                    <div class="fut-portrait-silhouette-large" style="display:none;">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>
+                    </div>
+                ` : `
+                    <div class="fut-portrait-silhouette-large">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>
+                    </div>
+                `}
+            </div>
+            
+            <div class="fut-name-centered-box">
+                <span class="fut-name-bold">${star.name}</span>
+                ${(star.rating >= 90 && styleName) ? `<span class="fut-playstyle-badge-small">⚡ ${styleName}</span>` : ''}
+            </div>
+            
+            <div class="fut-stats-grid-clean">
+                <div class="fut-stats-col">
+                    <div class="fut-stat-row">
+                        <span class="fut-stat-lbl-left">${l1}</span>
+                        <span class="fut-stat-val-right">${star.stats?.pac || star.stats?.div || 80}</span>
+                    </div>
+                    <div class="fut-stat-row">
+                        <span class="fut-stat-lbl-left">${l2}</span>
+                        <span class="fut-stat-val-right">${star.stats?.sho || star.stats?.han || 80}</span>
+                    </div>
+                    <div class="fut-stat-row">
+                        <span class="fut-stat-lbl-left">${l3}</span>
+                        <span class="fut-stat-val-right">${star.stats?.pas || star.stats?.kic || 80}</span>
+                    </div>
+                </div>
+                
+                <div class="fut-stats-col-divider"></div>
+                
+                <div class="fut-stats-col">
+                    <div class="fut-stat-row">
+                        <span class="fut-stat-lbl-left">${l4}</span>
+                        <span class="fut-stat-val-right">${star.stats?.dri || star.stats?.ref || 80}</span>
+                    </div>
+                    <div class="fut-stat-row">
+                        <span class="fut-stat-lbl-left">${l5}</span>
+                        <span class="fut-stat-val-right">${star.stats?.def || star.stats?.spd || 50}</span>
+                    </div>
+                    <div class="fut-stat-row">
+                        <span class="fut-stat-lbl-left">${l6}</span>
+                        <span class="fut-stat-val-right">${star.stats?.phy || star.stats?.pos || 75}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
 export const animateCount = (element, start, end, duration, formatFn = val => val) => {
     if (!element) return;
 
@@ -181,9 +291,20 @@ export const setupComparisonForm = () => {
 
         // Apply glowing colored theme boundaries on comparison container
         const container = document.querySelector('.container');
+        const phoneViewport = document.getElementById('phone-viewport');
         if (container) {
             container.style.setProperty('--team1-theme', t1.primaryColor);
             container.style.setProperty('--team2-theme', t2.primaryColor);
+            const r1 = hexToRgb(t1.primaryColor);
+            const r2 = hexToRgb(t2.primaryColor);
+            if (r1) container.style.setProperty('--team1-theme-rgb', r1);
+            if (r2) container.style.setProperty('--team2-theme-rgb', r2);
+        }
+        if (phoneViewport) {
+            const r1 = hexToRgb(t1.primaryColor);
+            const r2 = hexToRgb(t2.primaryColor);
+            if (r1) phoneViewport.style.setProperty('--team1-theme-rgb', r1);
+            if (r2) phoneViewport.style.setProperty('--team2-theme-rgb', r2);
         }
 
         const t1RankWin = t1.fifaRanking < t2.fifaRanking;
@@ -245,20 +366,13 @@ export const setupComparisonForm = () => {
         animateCount(document.getElementById('t1-val-points'), 1000, t1.rankingPoints, 1000, val => val.toLocaleString());
         animateCount(document.getElementById('t2-val-points'), 1000, t2.rankingPoints, 1000, val => val.toLocaleString());
 
-        // Populate squad profiles (Key Personnel) vertical scrolling lists
+        // Populate squad profiles (Key Personnel) side-by-side visual FUT cards
         const squadList = document.getElementById('overview-squad-profiles-list');
         if (squadList) {
             squadList.innerHTML = `
                 <div class="squad-profile-section">
-                    <div class="squad-profile-header">
-                        <span class="squad-profile-flag">${getFlagHTML(team1Key, "squad-profile-flag-img")}</span>
-                        <span class="squad-profile-team-name">${team1Key}</span>
-                    </div>
-                    <div class="squad-profile-items">
-                        <div class="squad-profile-item">
-                            <span class="squad-profile-label">Star Player</span>
-                            <span class="squad-profile-value">${t1.starPlayer}</span>
-                        </div>
+                    ${getFutCardHTML(team1Key, t1)}
+                    <div class="squad-profile-meta-box">
                         <div class="squad-profile-item">
                             <span class="squad-profile-label">Top Scorer</span>
                             <span class="squad-profile-value">${t1.topScorer}${t1.topScorerActive ? ' <span class="live-badge"><span class="live-dot"></span>Active</span>' : ''}</span>
@@ -271,15 +385,8 @@ export const setupComparisonForm = () => {
                 </div>
                 
                 <div class="squad-profile-section">
-                    <div class="squad-profile-header">
-                        <span class="squad-profile-flag">${getFlagHTML(team2Key, "squad-profile-flag-img")}</span>
-                        <span class="squad-profile-team-name">${team2Key}</span>
-                    </div>
-                    <div class="squad-profile-items">
-                        <div class="squad-profile-item">
-                            <span class="squad-profile-label">Star Player</span>
-                            <span class="squad-profile-value">${t2.starPlayer}</span>
-                        </div>
+                    ${getFutCardHTML(team2Key, t2)}
+                    <div class="squad-profile-meta-box">
                         <div class="squad-profile-item">
                             <span class="squad-profile-label">Top Scorer</span>
                             <span class="squad-profile-value">${t2.topScorer}${t2.topScorerActive ? ' <span class="live-badge"><span class="live-dot"></span>Active</span>' : ''}</span>
@@ -291,6 +398,26 @@ export const setupComparisonForm = () => {
                     </div>
                 </div>
             `;
+
+            // Bind mousemove listeners to Star Player cards for the 3D tilt effect
+            const cards = squadList.querySelectorAll('.fut-card');
+            cards.forEach(card => {
+                const teamColor = card.dataset.teamColor || '#3b82f6';
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left - rect.width / 2;
+                    const y = e.clientY - rect.top - rect.height / 2;
+                    const rotateX = -(y / (rect.height / 2)) * 12;
+                    const rotateY = (x / (rect.width / 2)) * 12;
+                    card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.03)`;
+                    card.style.boxShadow = `0 20px 40px rgba(0,0,0,0.3), 0 0 20px ${teamColor}44`;
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
+                    card.style.boxShadow = `0 4px 20px rgba(0, 0, 0, 0.15)`;
+                });
+            });
         }
 
         // Draw Tactics Field nodes

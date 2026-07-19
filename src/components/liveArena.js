@@ -144,12 +144,15 @@ export const renderLiveMatches = () => {
     
     const priorityTitle = document.querySelector(".prioritized-card .card-section-title");
     const generalTitle = document.querySelector(".general-matches-card .card-section-title");
+    const priorityText = priorityTitle?.querySelector('.title-text');
+    const generalText = generalTitle?.querySelector('.title-text');
+
     if (matchDateStr) {
-        if (priorityTitle) priorityTitle.textContent = `⭐ Your Teams' Fixtures (${matchDateStr})`;
-        if (generalTitle) generalTitle.textContent = `📅 Other Matchday Fixtures (${matchDateStr})`;
+        if (priorityText) priorityText.textContent = `Your Teams' Fixtures (${matchDateStr})`;
+        if (generalText) generalText.textContent = `Other Matchday Fixtures (${matchDateStr})`;
     } else {
-        if (priorityTitle) priorityTitle.textContent = `⭐ Your Teams' Fixtures`;
-        if (generalTitle) generalTitle.textContent = `📅 Other Matchday Fixtures`;
+        if (priorityText) priorityText.textContent = `Your Teams' Fixtures`;
+        if (generalText) generalText.textContent = `Other Matchday Fixtures`;
     }
 
     let priorityCount = 0;

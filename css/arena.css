@@ -973,11 +973,11 @@ body.dark-theme .strength-track-wrapper {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 12px;
+    padding: 6px 10px;
     background: var(--bg-secondary);
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--border-color);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
 .form-team-info {
@@ -2222,21 +2222,39 @@ body:not(.dark-theme) .m-card-meta {
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
 }
-.m-card-status-pill.status-live {
+body.dark-theme .m-card-status-pill.status-live {
     background: rgba(239, 68, 68, 0.15) !important;
     color: #f87171 !important;
     border: 1px solid rgba(239, 68, 68, 0.25) !important;
     animation: live-pulse-glow 1.5s ease-in-out infinite !important;
 }
-.m-card-status-pill.status-finished {
+body:not(.dark-theme) .m-card-status-pill.status-live {
+    background: rgba(220, 38, 38, 0.08) !important;
+    color: #dc2626 !important;
+    border: 1px solid rgba(220, 38, 38, 0.18) !important;
+    animation: live-pulse-glow 1.5s ease-in-out infinite !important;
+}
+
+body.dark-theme .m-card-status-pill.status-finished {
     background: rgba(148, 163, 184, 0.12) !important;
     color: #94a3b8 !important;
     border: 1px solid rgba(148, 163, 184, 0.2) !important;
 }
-.m-card-status-pill.status-upcoming {
+body:not(.dark-theme) .m-card-status-pill.status-finished {
+    background: rgba(71, 85, 105, 0.08) !important;
+    color: #475569 !important;
+    border: 1px solid rgba(71, 85, 105, 0.15) !important;
+}
+
+body.dark-theme .m-card-status-pill.status-upcoming {
     background: rgba(59, 130, 246, 0.12) !important;
     color: #60a5fa !important;
     border: 1px solid rgba(59, 130, 246, 0.2) !important;
+}
+body:not(.dark-theme) .m-card-status-pill.status-upcoming {
+    background: rgba(37, 99, 235, 0.08) !important;
+    color: #2563eb !important;
+    border: 1px solid rgba(37, 99, 235, 0.18) !important;
 }
 
 @keyframes live-pulse-glow {
@@ -2259,9 +2277,14 @@ body:not(.dark-theme) .console-match-header {
 .console-stadium {
     font-size: 11px !important;
     font-weight: 850 !important;
-    color: #38bdf8 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
+}
+body.dark-theme .console-stadium {
+    color: #38bdf8 !important;
+}
+body:not(.dark-theme) .console-stadium {
+    color: #0284c7 !important;
 }
 .console-group {
     font-size: 10.5px !important;
@@ -2312,7 +2335,18 @@ body:not(.dark-theme) .console-score {
     font-weight: 900 !important;
     padding: 3px 9px !important;
     border-radius: 20px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+body.dark-theme .console-time-elapsed {
+    color: #f87171 !important;
+    background: rgba(239, 68, 68, 0.15) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+}
+body:not(.dark-theme) .console-time-elapsed {
+    color: #dc2626 !important;
+    background: rgba(220, 38, 38, 0.08) !important;
+    border: 1px solid rgba(220, 38, 38, 0.15) !important;
+    box-shadow: 0 2px 8px rgba(220,38,38,0.05) !important;
 }
 
 /* Modern Tab Selectors */
@@ -2356,10 +2390,15 @@ body:not(.dark-theme) .console-tab-btn:hover {
     color: #1e293b !important;
     background: rgba(0, 0, 0, 0.02) !important;
 }
-.console-tab-btn.active {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+body.dark-theme .console-tab-btn.active {
+    background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25) !important;
+}
+body:not(.dark-theme) .console-tab-btn.active {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
 }
 
 /* Win probability predictor design system */
@@ -2374,6 +2413,12 @@ body.dark-theme .win-predictor-track {
 body:not(.dark-theme) .win-predictor-track {
     background: rgba(0, 0, 0, 0.03) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+body.dark-theme .matchup-card .player-ovr {
+    color: #fbbf24 !important;
+}
+body:not(.dark-theme) .matchup-card .player-ovr {
+    color: #b45309 !important;
 }
 .win-fill {
     font-size: 8.5px !important;

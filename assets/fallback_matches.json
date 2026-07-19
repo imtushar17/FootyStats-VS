@@ -22274,9 +22274,9 @@
   {
     "id": "101",
     "fifaMatchId": "400021541",
-    "status": "TIMED",
-    "finished": "FALSE",
-    "time_elapsed": "notstarted",
+    "status": "FINISHED",
+    "finished": "TRUE",
+    "time_elapsed": "90",
     "homeTeam": {
       "id": "43946",
       "name": "France"
@@ -22287,12 +22287,12 @@
     },
     "home_team_name_en": "France",
     "away_team_name_en": "Spain",
-    "home_score": null,
-    "away_score": null,
+    "home_score": 2,
+    "away_score": 1,
     "score": {
       "fullTime": {
-        "home": null,
-        "away": null
+        "home": 2,
+        "away": 1
       }
     },
     "home_penalty_score": null,
@@ -22306,7 +22306,7 @@
     "stadium_id": "400257526",
     "venue": "Dallas Stadium",
     "attendance": "",
-    "winner": null,
+    "winner": "France",
     "_original": {
       "IdCompetition": "17",
       "IdSeason": "285023",
@@ -22453,9 +22453,9 @@
   {
     "id": "102",
     "fifaMatchId": "400021540",
-    "status": "TIMED",
-    "finished": "FALSE",
-    "time_elapsed": "notstarted",
+    "status": "FINISHED",
+    "finished": "TRUE",
+    "time_elapsed": "90",
     "homeTeam": {
       "id": "43942",
       "name": "England"
@@ -22466,12 +22466,12 @@
     },
     "home_team_name_en": "England",
     "away_team_name_en": "Argentina",
-    "home_score": null,
-    "away_score": null,
+    "home_score": 1,
+    "away_score": 2,
     "score": {
       "fullTime": {
-        "home": null,
-        "away": null
+        "home": 1,
+        "away": 2
       }
     },
     "home_penalty_score": null,
@@ -22485,7 +22485,7 @@
     "stadium_id": "400098290",
     "venue": "Atlanta Stadium",
     "attendance": "",
-    "winner": null,
+    "winner": "Argentina",
     "_original": {
       "IdCompetition": "17",
       "IdSeason": "285023",

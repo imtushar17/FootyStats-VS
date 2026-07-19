@@ -864,11 +864,14 @@ export const openMatchDetailPopup = async (game) => {
                 </div>
             </div>
             ${penaltiesHTML}
-            <div style="font-size: 10.5px; color: var(--text-muted); text-align: center; margin-top: 12px; line-height: 1.4; border-top: 1px solid var(--border-color); padding-top: 10px;">
-                🏟️ <strong>Stadium:</strong> ${displayVenueName}<br>
-                📅 <strong>Scheduled Date:</strong> ${dateStr}<br>
-                🚩 <strong>Stage:</strong> ${displayStageLabel}<br>
-                ${displayRefereeName ? `⚖️ <strong>Referee:</strong> ${displayRefereeName}` : ""}
+            <div style="font-size: 10.5px; color: var(--text-muted); text-align: left; margin-top: 12px; line-height: 1.6; border-top: 1px solid var(--border-color); padding-top: 10px; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px;">
+                <span style="font-weight: 800; color: var(--text-main); font-family: var(--font-heading); font-size: 9px; letter-spacing: 0.5px;">STADIUM</span>
+                <span>${displayVenueName}</span>
+                <span style="font-weight: 800; color: var(--text-main); font-family: var(--font-heading); font-size: 9px; letter-spacing: 0.5px;">DATE</span>
+                <span>${dateStr}</span>
+                <span style="font-weight: 800; color: var(--text-main); font-family: var(--font-heading); font-size: 9px; letter-spacing: 0.5px;">STAGE</span>
+                <span>${displayStageLabel}</span>
+                ${displayRefereeName ? `<span style="font-weight: 800; color: var(--text-main); font-family: var(--font-heading); font-size: 9px; letter-spacing: 0.5px;">REFEREE</span><span>${displayRefereeName}</span>` : ""}
             </div>
         </div>
     `;
