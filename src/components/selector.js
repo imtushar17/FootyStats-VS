@@ -1,6 +1,7 @@
 import { teamData } from '../data/teams.js';
 import { state } from './matchcentre/state.js';
 import { getWcTeamFlagHTML, normalizeTeamName } from './matchcentre/utils.js';
+import { getBracketPlaceholderName } from './matchcentre/bracket.js';
 
 const TEAM_COLORS = {
     // CONCACAF
@@ -332,12 +333,18 @@ export const renderBracketModalSelection = (roundKey) => {
         if (!game) return;
         
         // Home Team Details
-        const homeRawName = game.homeTeam?.name || game.home_team_name_en || "TBD";
+        let homeRawName = game.homeTeam?.name || game.home_team_name_en || "TBD";
+        if (homeRawName === "TBD" || homeRawName === "undefined" || homeRawName === "null") {
+            homeRawName = getBracketPlaceholderName(game, false);
+        }
         const homeName = normalizeTeamName(homeRawName);
         const hasHome = homeName && homeName !== "TBD" && homeName !== "undefined" && homeName !== "null";
         
         // Away Team Details
-        const awayRawName = game.awayTeam?.name || game.away_team_name_en || "TBD";
+        let awayRawName = game.awayTeam?.name || game.away_team_name_en || "TBD";
+        if (awayRawName === "TBD" || awayRawName === "undefined" || awayRawName === "null") {
+            awayRawName = getBracketPlaceholderName(game, true);
+        }
         const awayName = normalizeTeamName(awayRawName);
         const hasAway = awayName && awayName !== "TBD" && awayName !== "undefined" && awayName !== "null";
         

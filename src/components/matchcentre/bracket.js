@@ -1,32 +1,80 @@
 import { state } from './state.js';
 import { getWcTeamFlagHTML, formatToIST, escapeHTML, isMatchFinished, isMatchLive, isMatchUpcoming, getGameScore } from './utils.js';
 
+const resolvePlaceholderTeam = (placeholder, gamesMap) => {
+    if (!placeholder) return "TBD";
+    const match = placeholder.match(/^(W|L|RU)(\d+)$/);
+    if (!match) return placeholder;
+
+    const type = match[1]; // "W", "L" or "RU"
+    const parentId = match[2];
+    const parentGame = gamesMap[parentId];
+    if (!parentGame) return placeholder;
+
+    // Check if match is finished or has scores defined
+    const isFinished = parentGame.status === "FINISHED" || parentGame.finished === "TRUE" || 
+                       (parentGame.home_score !== null && parentGame.away_score !== null);
+    if (!isFinished) {
+        return type === "W" ? `Winner Match ${parentId}` : `Loser Match ${parentId}`;
+    }
+
+    const hName = parentGame.homeTeam?.name || parentGame.home_team_name_en || "TBD";
+    const aName = parentGame.awayTeam?.name || parentGame.away_team_name_en || "TBD";
+    const hScore = parentGame.home_score ?? 0;
+    const aScore = parentGame.away_score ?? 0;
+
+    let winner = parentGame.winner;
+    if (!winner) {
+        if (hScore > aScore) winner = hName;
+        else if (aScore > hScore) winner = aName;
+        else if (parentGame.shootout?.winner) winner = parentGame.shootout.winner;
+        else winner = hName;
+    }
+
+    if (type === "W") {
+        return winner;
+    } else {
+        return winner === hName ? aName : hName;
+    }
+};
+
 export const getBracketPlaceholderName = (game, isAway) => {
     if (!game) return "TBD";
-    if (isAway && game.PlaceHolderB) return game.PlaceHolderB;
-    if (!isAway && game.PlaceHolderA) return game.PlaceHolderA;
 
-    const mappings = {
-        "89": ["W74", "W77"],
-        "90": ["W73", "W75"],
-        "91": ["W76", "W78"],
-        "92": ["W79", "W80"],
-        "93": ["W83", "W84"],
-        "94": ["W81", "W82"],
-        "95": ["W86", "W88"],
-        "96": ["W85", "W87"],
-        "97": ["W89", "W90"],
-        "98": ["W93", "W94"],
-        "99": ["W91", "W92"],
-        "100": ["W95", "W96"],
-        "101": ["W97", "W98"],
-        "102": ["W99", "W100"],
-        "104": ["W101", "W102"],
-        "103": ["L101", "L102"]
-    };
-    const pair = mappings[game.id];
-    if (pair) return pair[isAway ? 1 : 0];
-    return "TBD";
+    // Build gamesMap internally
+    const gamesMap = {};
+    const games = state.worldCupGames || [];
+    games.forEach(g => {
+        gamesMap[g.id] = g;
+    });
+
+    let placeholder = null;
+    if (isAway && game.PlaceHolderB) placeholder = game.PlaceHolderB;
+    else if (!isAway && game.PlaceHolderA) placeholder = game.PlaceHolderA;
+    else {
+        const mappings = {
+            "89": ["W74", "W77"],
+            "90": ["W73", "W75"],
+            "91": ["W76", "W78"],
+            "92": ["W79", "W80"],
+            "93": ["W83", "W84"],
+            "94": ["W81", "W82"],
+            "95": ["W86", "W88"],
+            "96": ["W85", "W87"],
+            "97": ["W89", "W90"],
+            "98": ["W93", "W94"],
+            "99": ["W91", "W92"],
+            "100": ["W95", "W96"],
+            "101": ["W97", "W98"],
+            "102": ["W99", "W100"],
+            "104": ["W101", "W102"],
+            "103": ["RU101", "RU102"]
+        };
+        const pair = mappings[game.id];
+        if (pair) placeholder = pair[isAway ? 1 : 0];
+    }
+
+    return resolvePlaceholderTeam(placeholder, gamesMap);
 };
 
 // Tree structure mapping for drawing SVG connections

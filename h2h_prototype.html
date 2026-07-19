@@ -13558,9 +13558,23 @@
             if ((t1 === "France" && t2 === "England") || (t1 === "England" && t2 === "France")) {
                 upcomingMatches.push({
                     year: 2026,
-                    date: "7/19/2026",
+                    date: "7/18/2026",
                     home: "France",
                     away: "England",
+                    homeScore: null,
+                    awayScore: null,
+                    city: "Miami",
+                    country: "USA",
+                    stage: "Third Place Playoff",
+                    shootout: null
+                });
+            }
+            if ((t1 === "Spain" && t2 === "Argentina") || (t1 === "Argentina" && t2 === "Spain")) {
+                upcomingMatches.push({
+                    year: 2026,
+                    date: "7/20/2026",
+                    home: "Spain",
+                    away: "Argentina",
                     homeScore: null,
                     awayScore: null,
                     city: "New York/NJ",
@@ -13569,15 +13583,29 @@
                     shootout: null
                 });
             }
-            if ((t1 === "Argentina" && t2 === "France") || (t1 === "France" && t2 === "Argentina")) {
+            if ((t1 === "France" && t2 === "Spain") || (t1 === "Spain" && t2 === "France")) {
+                upcomingMatches.push({
+                    year: 2026,
+                    date: "7/14/2026",
+                    home: "France",
+                    away: "Spain",
+                    homeScore: 1,
+                    awayScore: 2,
+                    city: "Dallas",
+                    country: "USA",
+                    stage: "Semi-finals",
+                    shootout: null
+                });
+            }
+            if ((t1 === "England" && t2 === "Argentina") || (t1 === "Argentina" && t2 === "England")) {
                 upcomingMatches.push({
                     year: 2026,
                     date: "7/15/2026",
-                    home: "France",
+                    home: "England",
                     away: "Argentina",
-                    homeScore: 2,
-                    awayScore: 1,
-                    city: "Arlington",
+                    homeScore: 1,
+                    awayScore: 2,
+                    city: "Atlanta",
                     country: "USA",
                     stage: "Semi-finals",
                     shootout: null

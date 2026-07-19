@@ -22287,12 +22287,12 @@
     },
     "home_team_name_en": "France",
     "away_team_name_en": "Spain",
-    "home_score": 2,
-    "away_score": 1,
+    "home_score": 1,
+    "away_score": 2,
     "score": {
       "fullTime": {
-        "home": 2,
-        "away": 1
+        "home": 1,
+        "away": 2
       }
     },
     "home_penalty_score": null,
@@ -22306,7 +22306,7 @@
     "stadium_id": "400257526",
     "venue": "Dallas Stadium",
     "attendance": "",
-    "winner": "France",
+    "winner": "Spain",
     "_original": {
       "IdCompetition": "17",
       "IdSeason": "285023",
@@ -22636,13 +22636,15 @@
     "finished": "FALSE",
     "time_elapsed": "notstarted",
     "homeTeam": {
-      "name": "TBD"
+      "id": "43946",
+      "name": "France"
     },
     "awayTeam": {
-      "name": "TBD"
+      "id": "43922",
+      "name": "England"
     },
-    "home_team_name_en": "TBD",
-    "away_team_name_en": "TBD",
+    "home_team_name_en": "France",
+    "away_team_name_en": "England",
     "home_score": null,
     "away_score": null,
     "score": {
@@ -22773,13 +22775,15 @@
     "finished": "FALSE",
     "time_elapsed": "notstarted",
     "homeTeam": {
-      "name": "TBD"
+      "id": "43969",
+      "name": "Spain"
     },
     "awayTeam": {
-      "name": "TBD"
+      "id": "43922",
+      "name": "Argentina"
     },
-    "home_team_name_en": "TBD",
-    "away_team_name_en": "TBD",
+    "home_team_name_en": "Spain",
+    "away_team_name_en": "Argentina",
     "home_score": null,
     "away_score": null,
     "score": {
