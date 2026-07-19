@@ -604,7 +604,8 @@
                 <button type="button" class="round-nav-btn" data-round="r16">R16</button>
                 <button type="button" class="round-nav-btn" data-round="qf">QF</button>
                 <button type="button" class="round-nav-btn" data-round="sf">SF</button>
-                <button type="button" class="round-nav-btn" data-round="final">Finals</button>
+                <button type="button" class="round-nav-btn" data-round="third">3rd Place</button>
+                <button type="button" class="round-nav-btn" data-round="final">Final</button>
             </div>
 
             <!-- Scrollable vertical list grid of bracket matches -->
@@ -672,7 +673,7 @@
         // Register Service Worker for PWA with auto-update checks and immediate reload
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=61')
+                navigator.serviceWorker.register('./sw.js?v=62')
                     .then(reg => {
                         console.log('Service Worker registered successfully:', reg.scope);
                         // Force an update check on startup to pull the latest cache immediately

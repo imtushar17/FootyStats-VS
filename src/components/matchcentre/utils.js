@@ -275,14 +275,14 @@ export const mapFifaMatch = (m) => {
 
     // Map stage
     let stage = m.stage || "GROUP_STAGE";
-    const stageDesc = m.StageName?.[0]?.Description || m.StageName?.Description || m._original?.StageName?.[0]?.Description || "";
+    const stageDesc = (m.StageName?.[0]?.Description || m.StageName?.Description || m._original?.StageName?.[0]?.Description || "").toLowerCase();
     if (stageDesc) {
-        if (stageDesc.includes("Round of 32")) stage = "ROUND_OF_32";
-        else if (stageDesc.includes("Round of 16")) stage = "ROUND_OF_16";
-        else if (stageDesc.includes("Quarter-final")) stage = "QUARTER_FINALS";
-        else if (stageDesc.includes("Semi-final")) stage = "SEMI_FINALS";
-        else if (stageDesc.includes("Play-off for third place") || stageDesc.includes("Third place") || stageDesc.includes("Third Place")) stage = "THIRD_PLACE";
-        else if (stageDesc.includes("Final")) stage = "FINAL";
+        if (stageDesc.includes("round of 32")) stage = "ROUND_OF_32";
+        else if (stageDesc.includes("round of 16")) stage = "ROUND_OF_16";
+        else if (stageDesc.includes("quarter-final")) stage = "QUARTER_FINALS";
+        else if (stageDesc.includes("semi-final")) stage = "SEMI_FINALS";
+        else if (stageDesc.includes("play-off for third place") || stageDesc.includes("third place") || stageDesc.includes("bronze final") || stageDesc.includes("bronze")) stage = "THIRD_PLACE";
+        else if (stageDesc.includes("final")) stage = "FINAL";
     }
 
     // Map group name
