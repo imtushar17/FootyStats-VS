@@ -1,7 +1,6 @@
 import { initTheme, setupThemeListeners } from './components/theme.js';
 import { setupSelectorListeners } from './components/selector.js';
 import { setupComparisonForm, fetchLiveRankings, fetchLiveTopScorers } from './components/comparison.js';
-import { drawTacticsPitch } from './components/tactics.js';
 import { drawWorldCupMatchesTab } from './components/worldCupTab.js';
 import { drawH2HMatchesTab } from './components/h2h.js';
 import { setupTrophyListeners } from './components/trophies.js';
@@ -53,12 +52,6 @@ const setupTabListeners = () => {
             btn.classList.add('active');
             const targetPanel = document.getElementById(`panel-${btn.dataset.tab}`);
             if (targetPanel) targetPanel.classList.add('active');
-
-            if (btn.dataset.tab === 'tactics') {
-                const t1 = team1Input?.value;
-                const t2 = team2Input?.value;
-                if (t1 && t2) drawTacticsPitch(t1, t2);
-            }
 
             if (btn.dataset.tab === 'wc2026') {
                 const t1 = team1Input?.value;

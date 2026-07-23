@@ -109,10 +109,6 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                         <span>Overview</span>
                     </button>
-                    <button type="button" class="tab-btn" data-tab="tactics">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8M12 8v8"></path></svg>
-                        <span>Tactics</span>
-                    </button>
                     <button type="button" class="tab-btn" data-tab="trophies">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"></path></svg>
                         <span>Trophies</span>
@@ -162,58 +158,6 @@
                         <h3 class="squad-profiles-title">Squad Profiles</h3>
                         <div class="squad-profiles-list" id="overview-squad-profiles-list">
                             <!-- Populated dynamically via JS -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tactics Pitch Tab Panel -->
-                <div class="tab-panel" id="panel-tactics">
-                    <div class="tactics-control-bar">
-                        <div class="team-selector-flags" id="tactics-team-flags">
-                            <!-- Clickable team flags switches populated by JS -->
-                        </div>
-                        <div class="active-tactics-meta">
-                            <h3 class="active-tactics-title" id="tactics-active-team-title">Lineup Setup</h3>
-                            <p class="active-tactics-sub" id="tactics-active-team-sub">Select a team to inspect tactics</p>
-                        </div>
-                    </div>
-                    
-                    <div class="tactics-tab-layout">
-                        <div class="pitch-container">
-                            <div class="soccer-pitch" id="tactics-pitch-canvas">
-                                <!-- Goal nets -->
-                                <div class="pitch-goal-net left-net"></div>
-                                <div class="pitch-goal-net right-net"></div>
-                                
-                                <!-- Penalty Areas -->
-                                <div class="pitch-penalty-area left-area"></div>
-                                <div class="pitch-penalty-area right-area"></div>
-                                
-                                <!-- Goal Areas -->
-                                <div class="pitch-goal-area left-goal-area"></div>
-                                <div class="pitch-goal-area right-goal-area"></div>
-                                
-                                <!-- Penalty Spots -->
-                                <div class="pitch-penalty-spot left-spot"></div>
-                                <div class="pitch-penalty-spot right-spot"></div>
-                                
-                                <!-- Center line and circle -->
-                                <div class="pitch-center-line"></div>
-                                <div class="pitch-center-circle"></div>
-                                
-                                <!-- Dynamic player nodes container -->
-                                <div id="pitch-player-nodes" class="pitch-nodes-container">
-                                    <!-- GK, DEF, MID, FWD, ST dynamic clickable nodes -->
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Interactive Detail Panel for selected player card -->
-                        <div class="tactics-detail-card-panel">
-                            <h4 class="details-instructions-text">Hover or click any player on the pitch to inspect card details</h4>
-                            <div class="tactics-player-card-wrapper" id="tactics-player-card-target">
-                                <!-- Dynamic interactive FUT card will render here -->
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -673,7 +617,7 @@
         // Register Service Worker for PWA with auto-update checks and immediate reload
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=62')
+                navigator.serviceWorker.register('./sw.js?v=63')
                     .then(reg => {
                         console.log('Service Worker registered successfully:', reg.scope);
                         // Force an update check on startup to pull the latest cache immediately

@@ -1,6 +1,5 @@
 import { teamData } from '../data/teams.js';
 import { getFlagHTML } from './selector.js';
-import { drawTacticsPitch } from './tactics.js';
 import { drawTrophyCabinet } from './trophies.js';
 
 const hexToRgb = (hex) => {
@@ -419,9 +418,6 @@ export const setupComparisonForm = () => {
                 });
             });
         }
-
-        // Draw Tactics Field nodes
-        drawTacticsPitch(team1Key, team2Key);
 
         // Draw Trophy Cabinets
         const t1FlagEl = document.getElementById("cabinet-t1-flag");
