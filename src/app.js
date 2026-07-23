@@ -424,8 +424,9 @@ window.addEventListener('DOMContentLoaded', () => {
     setupGatewayListeners();
     setupPwaPromptListeners();
 
-    // Fetch live FIFA rankings immediately on application load
+    // Fetch live FIFA rankings & active national top scorers immediately on application load
     fetchLiveRankings();
+    fetchLiveTopScorers();
 
     // Fetch World Cup matches list immediately on application load
     fetchMatchesList();

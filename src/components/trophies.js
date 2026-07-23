@@ -25,7 +25,7 @@ export const drawTrophyCabinet = (teamKey, cabinetContainerId, shelvesId) => {
             confederation: ["1921", "1925", "1927", "1929", "1937", "1941", "1945", "1946", "1947", "1955", "1957", "1959", "1991", "1993", "2021", "2024"]
         },
         Spain: {
-            worldCup: ["2010"],
+            worldCup: ["2010", "2026"],
             confederation: ["1964", "2008", "2012", "2024"]
         },
         France: {

@@ -102,7 +102,7 @@ export const teamData = {
         "flag": "🇪🇸",
         "code": "es",
         "fifaRanking": 3,
-        "worldCups": 1,
+        "worldCups": 2,
         "confederationTitles": 4,
         "topScorer": "David Villa (59 goals)",
         "topScorerGoals": 59,
